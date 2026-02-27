@@ -5,24 +5,40 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-java@v4
+      
+      - name: Setup Java 17
+        uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
-      - uses: actions/setup-node@v4
+          
+      - name: Setup Node
+        uses: actions/setup-node@v4
         with:
           node-version: '18'
 
       - name: Instalar e Construir
         run: |
+          # Instala as dependências do Capacitor
           npm install
+          
+          # Cria a pasta do Android que não existe no seu repo
           npx cap add android
+          
+          # INJEÇÃO DE PERMISSÃO: Permite ao app ver os 15MB da ndj-lib
+          MANIFEST="android/app/src/main/AndroidManifest.xml"
+          sed -i '/<application/i \    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />' $MANIFEST
+          sed -i '/<application/i \    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />' $MANIFEST
+          sed -i '/<application/i \    <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" />' $MANIFEST
+          
+          # Sincroniza o seu HTML com o projeto Android
           npx cap sync
+          
+          # Compila o APK real
           cd android && chmod +x gradlew && ./gradlew assembleDebug
 
       - name: Subir APK
         uses: actions/upload-artifact@v4
         with:
-          name: jogo-capacitor
+          name: ndj-portable-apk
           path: android/app/build/outputs/apk/debug/*.apk
-          
