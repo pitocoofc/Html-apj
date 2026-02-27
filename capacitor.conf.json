@@ -1,0 +1,6 @@
+{
+  "appId": "com.meu.jogo",
+  "appName": "Meu Jogo",
+  "webDir": "www",
+  "bundledWebRuntime": false
+}
