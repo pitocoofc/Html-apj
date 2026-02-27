@@ -1,19 +1,101 @@
 <!DOCTYPE html>
-<html>
+<html lang="pt-br">
 <head>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Jogo de Clique</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Ndj-lib Monitor</title>
     <style>
-        body { background: #000; color: #fff; text-align: center; padding-top: 50px; }
-        button { padding: 30px; font-size: 25px; background: #07f; color: #fff; border: none; border-radius: 10px; }
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: #000; color: #fff; font-family: sans-serif; overflow: hidden; }
+        #splash-screen { position: fixed; width: 100%; height: 100%; background: #000; display: flex; align-items: center; justify-content: center; z-index: 1000; transition: 0.8s; }
+        .logo { border: 2px solid #fff; padding: 20px; font-weight: bold; font-size: 24px; border-radius: 15px; }
+        #app-content { display: none; height: 100%; flex-direction: column; align-items: center; justify-content: center; padding: 20px; text-align: center; }
+        
+        /* Status Dinâmico */
+        .status-box { width: 80%; padding: 20px; border-radius: 12px; background: #0a0a0a; border: 1px solid #1a1a1a; margin-top: 20px; }
+        #status-text { color: #ffcc00; font-weight: bold; text-transform: uppercase; letter-spacing: 2px; }
+        #console { margin-top: 15px; font-family: monospace; font-size: 11px; color: #555; text-align: left; height: 60px; overflow: hidden; }
+        
+        .error { color: #ff4444 !important; border-color: #ff4444 !important; }
+        .success { color: #00ff41 !important; }
     </style>
 </head>
 <body>
-    <h1 id="score">Pontos: 0</h1>
-    <button onclick="add()">CLICAR</button>
+
+    <div id="splash-screen"><div class="logo">NDJ-LIB</div></div>
+
+    <div id="app-content">
+        <h1 id="title">NDJ-LIB SISTEMA</h1>
+        <p id="subtitle">Monitorando diretório de instalação...</p>
+
+        <div class="status-box" id="box">
+            <div id="status-text">VERIFICANDO...</div>
+            <div id="console">Aguardando sinal do sistema...</div>
+        </div>
+    </div>
+
     <script>
-        let p = 0;
-        function add() { p++; document.getElementById('score').innerText = "Pontos: " + p; }
+        // Transição inicial
+        setTimeout(() => {
+            document.getElementById('splash-screen').style.opacity = '0';
+            setTimeout(() => {
+                document.getElementById('splash-screen').style.display = 'none';
+                document.getElementById('app-content').style.display = 'flex';
+                iniciarMonitoramento();
+            }, 800);
+        }, 3000);
+
+        let segundosPassados = 0;
+        let verificado = false;
+
+        function atualizarLog(msg) {
+            const c = document.getElementById('console');
+            c.innerHTML = `> ${msg}<br>` + c.innerHTML;
+        }
+
+        async function verificarPasta() {
+            if(verificado) return;
+
+            segundosPassados += 5;
+            atualizarLog(`Checando pasta 'easy-djs-bot' (${segundosPassados}s)...`);
+
+            /* LÓGICA REAL DO CAPACITOR:
+               Aqui chamamos o Filesystem.readdir({ path: 'node_modules/easy-djs-bot' })
+               Como estamos no HTML, vamos simular a resposta do sistema.
+            */
+            
+            // SIMULAÇÃO: Se quiser testar o sucesso, mude para 'true'
+            let pastaExiste = false; 
+
+            if (pastaExiste) {
+                finalizarSucesso();
+            } else if (segundosPassados >= 15) {
+                finalizarErro();
+            }
+        }
+
+        function finalizarSucesso() {
+            verificado = true;
+            document.getElementById('status-text').innerText = "INSTALADO";
+            document.getElementById('status-text').className = "success";
+            document.getElementById('title').innerText = "BOT PRONTO";
+            atualizarLog("✅ Pasta detectada! Ndj-lib pronta para uso.");
+            clearInterval(monitor);
+        }
+
+        function finalizarErro() {
+            verificado = true;
+            document.getElementById('status-text').innerText = "ERRO DE INSTALAÇÃO";
+            document.getElementById('box').className = "status-box error";
+            atualizarLog("❌ Tempo esgotado! Pasta não encontrada.");
+            atualizarLog("Verifique sua conexão ou o repositório Ndj-lib.");
+            clearInterval(monitor);
+        }
+
+        let monitor;
+        function iniciarMonitoramento() {
+            // Verifica a cada 5 segundos conforme sua ideia
+            monitor = setInterval(verificarPasta, 5000);
+        }
     </script>
 </body>
 </html>
