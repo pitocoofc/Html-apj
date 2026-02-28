@@ -2,7 +2,6 @@
   "name": "ndj-lib-reborn",
   "version": "1.0.0",
   "dependencies": {
-    "@capacitor/http": "^5.0.0",
     "discord.js": "^14.11.0",
     "@capacitor/android": "^5.0.0",
     "@capacitor/core": "^5.0.0",
