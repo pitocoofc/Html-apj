@@ -39,13 +39,15 @@
 
     <script src="capacitor.js"></script>
     <script>
-        // Importando plugins nativos para contornar restrições de rede
         const { LocalNotifications, CapacitorHttp } = Capacitor.Plugins;
         const logBox = document.getElementById('log');
         const mainBtn = document.getElementById('main-btn');
         const stopBtn = document.getElementById('stop-btn');
+        
         let socket = null;
         let heartbeatInterval = null;
+        let watchdogInterval = null;
+        let currentToken = "";
 
         function addLog(text, colorClass = '') {
             const entry = document.createElement('div');
@@ -64,26 +66,32 @@
             }, 3000);
         };
 
-        // SOLUÇÃO: Usando CapacitorHttp para evitar "Falha no Fetch" (CORS)
+        // Watchdog: Verifica a conexão a cada 20 segundos
+        function startWatchdog() {
+            if(watchdogInterval) clearInterval(watchdogInterval);
+            watchdogInterval = setInterval(() => {
+                if (!socket || socket.readyState !== WebSocket.OPEN) {
+                    addLog("🔄 Conexão instável. Reconectando...", "ln-yellow");
+                    conectarGateway(currentToken);
+                } else {
+                    console.log("Watchdog: Socket OK");
+                }
+            }, 20000); 
+        }
+
         async function registrarSlash(token) {
             try {
-                addLog("Validando token via Native HTTP...", "ln-yellow");
-                
-                // 1. Pegar dados do bot
-                const meOptions = {
+                addLog("Sincronizando Comandos...", "ln-yellow");
+                const meResp = await CapacitorHttp.get({
                     url: 'https://discord.com/api/v10/users/@me',
                     headers: { 'Authorization': `Bot ${token}` }
-                };
-                const meResp = await CapacitorHttp.get(meOptions);
+                });
                 
-                if (meResp.status !== 200) throw new Error("Token Inválido (Status " + meResp.status + ")");
-                
-                const meData = meResp.data;
-                addLog(`Bot: ${meData.username}`, "ln-yellow");
+                if (meResp.status !== 200) throw new Error("Token Inválido");
 
-                // 2. Registrar Comando Slash
-                const regOptions = {
-                    url: `https://discord.com/api/v10/applications/${meData.id}/commands`,
+                const appId = meResp.data.id;
+                const regResp = await CapacitorHttp.request({
+                    url: `https://discord.com/api/v10/applications/${appId}/commands`,
                     method: 'PUT',
                     headers: {
                         'Authorization': `Bot ${token}`,
@@ -91,99 +99,98 @@
                     },
                     data: [{
                         name: "testar",
-                        description: "Comando nativo via Ndj-lib Reborn",
+                        description: "Comando Ndj-lib Reborn Mobile",
                         type: 1
                     }]
-                };
+                });
 
-                const regResp = await CapacitorHttp.request(regOptions);
-
-                if (regResp.status === 200 || regResp.status === 201) {
-                    addLog("✅ Slash /testar registrado nativamente!", "ln-green");
-                } else {
-                    addLog("⚠️ Erro no registro: " + regResp.status, "ln-yellow");
-                }
+                if (regResp.status <= 204) addLog("✅ Slash /testar Atualizado", "ln-green");
             } catch (e) {
-                addLog("❌ Falha Nativa: " + e.message, "ln-red");
+                addLog("❌ Erro REST: " + e.message, "ln-red");
                 throw e;
             }
         }
 
         function conectarGateway(token) {
+            currentToken = token;
+            if (socket) { socket.onclose = null; socket.close(); }
+
             socket = new WebSocket('wss://gateway.discord.gg/?v=10&encoding=json');
 
             socket.onmessage = async (event) => {
                 const data = JSON.parse(event.data);
                 const { op, t, d } = data;
 
-                if (op === 10) { 
+                if (op === 10) { // HELLO
+                    if (heartbeatInterval) clearInterval(heartbeatInterval);
                     heartbeatInterval = setInterval(() => {
-                        socket.send(JSON.stringify({ op: 1, d: null }));
+                        if(socket.readyState === WebSocket.OPEN)
+                            socket.send(JSON.stringify({ op: 1, d: null }));
                     }, d.heartbeat_interval);
 
                     socket.send(JSON.stringify({
                         op: 2,
                         d: {
                             token: token,
-                            intents: 1,
-                            properties: { os: 'android', browser: 'native-bridge', device: 'mobile' }
+                            intents: 1, 
+                            properties: { os: 'android', browser: 'native', device: 'mobile' }
                         }
                     }));
                 }
 
                 if (t === 'INTERACTION_CREATE') {
-                    if(d.data.name === 'testar') {
-                        addLog("📩 Interação detectada!", "ln-green");
-                        
-                        // Responder também usando o HTTP Nativo
-                        const resOptions = {
-                            url: `https://discord.com/api/v10/interactions/${d.id}/${d.token}/callback`,
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            data: {
-                                type: 4,
-                                data: { content: "🚀 **Ndj-lib Reborn:** Respondendo via Native Bridge!" }
-                            }
-                        };
-                        await CapacitorHttp.post(resOptions);
-                    }
+                    addLog("📩 Slash detectado!", "ln-green");
+                    
+                    // Resposta via CapacitorHttp (Evita erro de fetch no callback)
+                    const resOptions = {
+                        url: `https://discord.com/api/v10/interactions/${d.id}/${d.token}/callback`,
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        data: {
+                            type: 4,
+                            data: { content: "🚀 **Ndj-lib Reborn:** Sistema Online e Monitorado!" }
+                        }
+                    };
+                    CapacitorHttp.post(resOptions).catch(e => console.error("Erro callback", e));
                 }
 
                 if (t === 'READY') {
-                    addLog(`✅ Bot Online!`, "ln-green");
+                    addLog(`✅ Bot Online: ${d.user.username}`, "ln-green");
                     setupNotification();
+                    startWatchdog();
                 }
             };
 
             socket.onclose = () => {
-                addLog("🔌 Conexão encerrada.", "ln-yellow");
-                if (mainBtn.style.display === 'none') finalizarSistema();
+                console.log("Socket fechado");
+            };
+
+            socket.onerror = (e) => {
+                addLog("⚠️ Erro de Conexão", "ln-red");
             };
         }
 
         async function setupNotification() {
             try {
-                await LocalNotifications.registerActionTypes({
-                    types: [{ id: 'NDJ_ACTIONS', actions: [{ id: 'fechar', title: 'DESLIGAR BOT', destructive: true }] }]
-                });
+                await LocalNotifications.requestPermissions();
                 await LocalNotifications.schedule({
                     notifications: [{
                         title: "Ndj-lib: Ativa",
-                        body: "O bot está processando comandos.",
+                        body: "O bot está online no seu celular.",
                         id: 1,
-                        actionTypeId: 'NDJ_ACTIONS',
-                        ongoing: true
+                        ongoing: true,
+                        sticky: true
                     }]
                 });
-            } catch (e) { }
+            } catch (e) { console.error(e); }
         }
 
         async function ativarBot() {
             const token = document.getElementById('bot-token').value;
-            if(!token) return alert("Insira o token!");
+            if(!token) return;
 
             mainBtn.disabled = true;
-            mainBtn.innerText = "ATIVANDO...";
+            mainBtn.innerText = "SINCRO...";
 
             try {
                 await registrarSlash(token);
@@ -197,20 +204,20 @@
         }
 
         async function finalizarSistema() {
+            addLog("Encerrando...", "ln-yellow");
             if(socket) socket.close();
             if(heartbeatInterval) clearInterval(heartbeatInterval);
+            if(watchdogInterval) clearInterval(watchdogInterval);
             await LocalNotifications.cancel({ notifications: [{ id: 1 }] }).catch(()=>{});
 
-            stopBtn.style.display = 'none';
-            mainBtn.style.display = 'block';
-            mainBtn.disabled = false;
-            mainBtn.innerText = "LIGAR BOT";
-            addLog("SISTEMA ENCERRADO.");
+            setTimeout(() => {
+                stopBtn.style.display = 'none';
+                mainBtn.style.display = 'block';
+                mainBtn.disabled = false;
+                mainBtn.innerText = "LIGAR BOT";
+                addLog("BOT DESLIGADO.");
+            }, 1000);
         }
-
-        LocalNotifications.addListener('localNotificationActionPerformed', (action) => {
-            if (action.actionId === 'fechar') finalizarSistema();
-        });
     </script>
 </body>
 </html>
