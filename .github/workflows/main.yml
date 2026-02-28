@@ -24,6 +24,17 @@ jobs:
           
           # 2. Cria a pasta do Android
           npx cap add android
+
+                - name: Instalar e Construir
+        run: |
+          npm install
+          npx cap add android
+          
+          # ATIVAR HTTP NATIVO (Isso resolve o erro de versão)
+          npx cap update
+          
+          # [Suas injeções de permissão continuam aqui...]
+
           
           # 3. INJEÇÃO DE PERMISSÕES CRÍTICAS
           MANIFEST="android/app/src/main/AndroidManifest.xml"
