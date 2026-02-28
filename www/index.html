@@ -63,15 +63,18 @@
             }, 3000);
         };
 
-        // CORREÇÃO: Função REST com tratamento de erro detalhado
         async function registrarSlash(token) {
             try {
+                // 1. Busca identidade do bot (Verifica se o token é válido)
                 const meResp = await fetch('https://discord.com/api/v10/users/@me', {
                     headers: { Authorization: `Bot ${token}` }
                 });
                 const meData = await meResp.json();
-                if(!meData.id) throw new Error("Token Inválido ou sem Escopo");
+                if(!meData.id) throw new Error("Token Inválido ou sem permissão de Bot");
 
+                addLog(`Bot detectado: ${meData.username}`, "ln-yellow");
+
+                // 2. Registro do comando Slash
                 const response = await fetch(`https://discord.com/api/v10/applications/${meData.id}/commands`, {
                     method: 'PUT',
                     headers: {
@@ -80,15 +83,16 @@
                     },
                     body: JSON.stringify([{
                         name: "testar",
-                        description: "Comando de teste Ndj-lib Reborn",
+                        description: "Comando nativo da Ndj-lib Reborn",
                         type: 1
                     }])
                 });
 
-                if (response.ok) addLog("✅ Comando /testar enviado ao Discord!", "ln-green");
-                else addLog("❌ Erro no Registro REST", "ln-red");
+                if (response.ok) addLog("✅ Slash /testar atualizado!", "ln-green");
+                else addLog("⚠️ Erro REST: " + response.status, "ln-yellow");
             } catch (e) {
-                addLog("❌ Falha crítica: " + e.message, "ln-red");
+                addLog("❌ Erro: " + e.message, "ln-red");
+                throw e; // Interrompe a ativação se o token for ruim
             }
         }
 
@@ -99,6 +103,7 @@
                 const data = JSON.parse(event.data);
                 const { op, t, d } = data;
 
+                // HELLO: Inicia o batimento cardíaco
                 if (op === 10) { 
                     heartbeatInterval = setInterval(() => {
                         socket.send(JSON.stringify({ op: 1, d: null }));
@@ -109,67 +114,73 @@
                         d: {
                             token: token,
                             intents: 1, // GUILDS
-                            properties: { os: 'android', browser: 'capacitor', device: 'mobile' }
+                            properties: { os: 'android', browser: 'js-puro', device: 'mobile' }
                         }
                     }));
                 }
 
-                // NOVO: Detectar quando o comando Slash é usado
+                // ESCUTA INTERAÇÕES (Slash Commands)
                 if (t === 'INTERACTION_CREATE') {
-                    addLog("📩 Comando /testar detectado no Discord!", "ln-yellow");
-                    // Responder à interação via REST
-                    await fetch(`https://discord.com/api/v10/interactions/${d.id}/${d.token}/callback`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            type: 4,
-                            data: { content: "🚀 **Ndj-lib Reborn:** Sistema Operacional no Android!" }
-                        })
-                    });
+                    if(d.data.name === 'testar') {
+                        addLog("📩 Comando recebido no Discord!", "ln-green");
+                        
+                        // Responder à interação via Fetch (REST)
+                        await fetch(`https://discord.com/api/v10/interactions/${d.id}/${d.token}/callback`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                type: 4,
+                                data: { content: "🚀 **Ndj-lib Reborn:** O bot está rodando nativamente no Android!" }
+                            })
+                        });
+                    }
                 }
 
                 if (t === 'READY') {
-                    addLog(`✅ Bot Online: ${d.user.username}`, "ln-green");
+                    addLog(`✅ Bot Online!`, "ln-green");
                     setupNotification();
                 }
             };
 
-            socket.onclose = () => {
+            socket.onclose = (e) => {
                 addLog("🔌 Conexão encerrada.", "ln-yellow");
-                finalizarSistema();
+                if (mainBtn.style.display === 'none') finalizarSistema();
             };
         }
 
         async function setupNotification() {
             try {
                 await LocalNotifications.registerActionTypes({
-                    types: [{ id: 'NDJ_ACTIONS', actions: [{ id: 'fechar', title: 'ENCERRAR BOT', destructive: true }] }]
+                    types: [{ id: 'NDJ_ACTIONS', actions: [{ id: 'fechar', title: 'DESLIGAR BOT', destructive: true }] }]
                 });
                 await LocalNotifications.schedule({
                     notifications: [{
                         title: "Ndj-lib: Ativa",
-                        body: "Clique no botão para desligar o bot.",
+                        body: "Serviço rodando em segundo plano.",
                         id: 1,
                         actionTypeId: 'NDJ_ACTIONS',
                         ongoing: true
                     }]
                 });
-            } catch (e) { console.log("Notificação não suportada no navegador"); }
+            } catch (e) { console.log("Erro de notificação (ignorado)"); }
         }
 
         async function ativarBot() {
             const token = document.getElementById('bot-token').value;
-            if(!token) return alert("Token vazio.");
+            if(!token) return alert("Insira o token!");
 
             mainBtn.disabled = true;
-            mainBtn.innerText = "ATIVANDO...";
+            mainBtn.innerText = "CONECTANDO...";
 
-            // Ordem correta: Primeiro o Slash, depois o Gateway
-            await registrarSlash(token);
-            conectarGateway(token);
-
-            mainBtn.style.display = 'none';
-            stopBtn.style.display = 'block';
+            try {
+                await registrarSlash(token);
+                conectarGateway(token);
+                mainBtn.style.display = 'none';
+                stopBtn.style.display = 'block';
+            } catch (e) {
+                mainBtn.disabled = false;
+                mainBtn.innerText = "LIGAR BOT";
+            }
         }
 
         async function finalizarSistema() {
