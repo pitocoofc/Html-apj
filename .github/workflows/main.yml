@@ -19,43 +19,33 @@ jobs:
 
       - name: Instalar e Construir
         run: |
-          # 1. Instala dependências (incluindo LocalNotifications para evitar o erro 404)
+          # 1. Instala dependências limpas
           npm install
           
-          # 2. Cria a pasta do Android
-          npx cap add android
-
-                - name: Instalar e Construir
-        run: |
-          npm install
-          npx cap add android
-          
-          # ATIVAR HTTP NATIVO (Isso resolve o erro de versão)
+          # 2. Adiciona plataforma e ativa o motor nativo
+          npx cap add android || true
           npx cap update
           
-          # [Suas injeções de permissão continuam aqui...]
-
-          
-          # 3. INJEÇÃO DE PERMISSÕES CRÍTICAS
+          # 3. INJEÇÃO DE PERMISSÕES (AndroidManifest)
           MANIFEST="android/app/src/main/AndroidManifest.xml"
           
-          # Permissões de Rede (Resolve o "Falha no Fetch")
+          # Rede e Internet
           sed -i '/<application/i \    <uses-permission android:name="android.permission.INTERNET" />' $MANIFEST
           sed -i '/<application/i \    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />' $MANIFEST
           
-          # Permissões de Segundo Plano e Notificação (Android 13+)
+          # Segundo Plano e Notificações (Android 13+)
           sed -i '/<application/i \    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />' $MANIFEST
           sed -i '/<application/i \    <uses-permission android:name="android.permission.WAKE_LOCK" />' $MANIFEST
           sed -i '/<application/i \    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />' $MANIFEST
           
-          # Permissões de Armazenamento (Seu plano original)
+          # Armazenamento
           sed -i '/<application/i \    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />' $MANIFEST
           sed -i '/<application/i \    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />' $MANIFEST
           
-          # 4. Sincroniza o seu HTML com o projeto Android
+          # 4. Sincroniza arquivos do HTML/JS para o Android
           npx cap sync
           
-          # 5. Compila o APK real
+          # 5. Build do APK final
           cd android && chmod +x gradlew && ./gradlew assembleDebug
 
       - name: Subir APK
