@@ -1,218 +1,358 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Multi-Interpreter Mobile</title>
-    <style>
-        :root {
-            --bg-color: #1e272e;
-            --editor-bg: #2d3436;
-            --cyan: #00d2d3;
-            --red: #ff7675;
-            --text: #ffffff;
-            --suggestion-bg: #252d31;
-            --console-bg: #111;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BOOST // CORE</title>
+<meta name="theme-color" content="#00ffcc">
 
-        body {
-            margin: 0; padding: 0;
-            background-color: var(--bg-color);
-            color: var(--text);
-            font-family: 'Segoe UI', sans-serif;
-            display: flex; flex-direction: column;
-            height: 100vh; overflow: hidden;
-        }
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
 
-        #editor-container { flex: 1; position: relative; display: flex; flex-direction: column; }
+*{
+  margin:0;
+  padding:0;
+  box-sizing:border-box;
+  font-family:'Share Tech Mono', monospace;
+}
 
-        #code-editor {
-            flex: 1; background: var(--editor-bg); color: var(--text);
-            border: none; padding: 15px; font-family: monospace;
-            font-size: 16px; outline: none; resize: none; width: 100%; box-sizing: border-box;
-        }
+body{
+  background:radial-gradient(circle at center,#020202,#000);
+  color:#00ffcc;
+  height:100vh;
+  overflow:hidden;
+}
 
-        #console-output {
-            height: 120px; background: var(--console-bg);
-            color: #2ecc71; padding: 10px; font-family: monospace;
-            font-size: 14px; overflow-y: auto; border-top: 2px solid #333;
-        }
+/* LOGIN */
+#login{
+  height:100%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
 
-        #suggestion-box {
-            position: absolute; background: var(--suggestion-bg);
-            border: 1px solid #444; border-radius: 4px;
-            z-index: 100; max-height: 200px; overflow-y: auto;
-            min-width: 180px; display: none;
-        }
+#login button{
+  padding:15px 40px;
+  font-size:1.1em;
+  border:1px solid #00ffcc;
+  background:none;
+  color:#00ffcc;
+  cursor:pointer;
+}
 
-        .suggestion-item {
-            padding: 10px 15px; display: flex; justify-content: space-between;
-            border-bottom: 1px solid #333; cursor: pointer;
-        }
+#login button:hover{
+  background:#00ffcc22;
+}
 
-        .suggestion-item .label { color: var(--cyan); font-weight: bold; }
-        .suggestion-item .type { color: #888; font-size: 11px; }
+/* HOTBAR */
+#hotbar{
+  position:fixed;
+  bottom:10px;
+  left:50%;
+  transform:translateX(-50%);
+  display:none;
+  gap:10px;
+}
 
-        #toolbar { background: var(--bg-color); padding: 10px; border-top: 1px solid #333; }
+.app{
+  width:50px;
+  height:50px;
+  border:1px solid #00ffcc;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  cursor:pointer;
+  box-shadow:0 0 10px #00ffcc44;
+}
 
-        .shortcut-bar { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 10px; }
-        .shortcut-bar button {
-            background: transparent; color: var(--cyan); border: 1px solid var(--cyan);
-            padding: 5px 12px; border-radius: 4px; font-weight: bold;
-        }
+.app:hover{
+  background:#00ffcc22;
+}
 
-        .action-bar { display: flex; justify-content: space-between; align-items: center; }
-        button.main-btn {
-            background: transparent; border: none; color: var(--cyan);
-            font-weight: bold; font-size: 14px; text-transform: uppercase; cursor: pointer;
-        }
-        .btn-red { color: var(--red) !important; }
-    </style>
+/* WINDOW */
+#window{
+  position:fixed;
+  inset:0;
+  display:none;
+  align-items:center;
+  justify-content:center;
+}
+
+.hud{
+  width:90%;
+  max-width:420px;
+  border:1px solid #00ffcc55;
+  padding:20px;
+  box-shadow:0 0 25px #00ffcc44;
+}
+
+h1{
+  text-align:center;
+  margin-bottom:20px;
+}
+
+button.opt{
+  width:100%;
+  margin:6px 0;
+  background:none;
+  border:1px solid #00ffcc;
+  color:#00ffcc;
+  padding:10px;
+  cursor:pointer;
+}
+
+button.opt:hover{
+  background:#00ffcc22;
+}
+
+#log{
+  margin-top:15px;
+  font-size:0.85em;
+  text-align:center;
+  opacity:0.8;
+}
+
+/* OPTIMIZE / INVASION */
+#optimize,
+#invasion{
+  position:fixed;
+  inset:0;
+  display:none;
+  background:#000;
+  padding:15px;
+}
+
+#terminal,
+#invTerminal{
+  height:60%;
+  overflow:hidden;
+  font-size:0.75em;
+}
+
+.bluebar{
+  width:100%;
+  height:14px;
+  border:1px solid #00aaff;
+  margin-top:10px;
+}
+
+#bluefill,
+#bluefillInv{
+  height:100%;
+  width:0%;
+  background:linear-gradient(90deg,#00aaff,#33ccff);
+  transition:width 0.1s;
+}
+
+/* NOTIFY */
+#notify{
+  position:fixed;
+  top:15px;
+  right:15px;
+  background:#001b22;
+  border:1px solid #00ffcc;
+  padding:10px 14px;
+  display:none;
+  box-shadow:0 0 15px #00ffcc55;
+  font-size:0.8em;
+}
+</style>
 </head>
 <body>
 
-    <div id="editor-container">
-        <textarea id="code-editor" spellcheck="false" placeholder="language brainfuck..."></textarea>
-        <div id="suggestion-box"></div>
-    </div>
+<!-- LOGIN -->
+<div id="login">
+  <button onclick="enter()">Для входа</button>
+</div>
 
-    <div id="console-output">Console: Aguardando execução...</div>
+<!-- HOTBAR -->
+<div id="hotbar">
+  <div class="app" onclick="openApp()">A</div>
+  <div class="app" onclick="openApp()">B</div>
+  <div class="app" onclick="openApp()">C</div>
+</div>
 
-    <div id="toolbar">
-        <div class="shortcut-bar">
-            <button onclick="insertText('+')">+</button>
-            <button onclick="insertText('-')">-</button>
-            <button onclick="insertText('>')">&gt;</button>
-            <button onclick="insertText('<')">&lt;</button>
-            <button onclick="insertText('[')">[</button>
-            <button onclick="insertText(']')">]</button>
-            <button onclick="insertText('.')">.</button>
-            <button onclick="insertText('(')">(</button>
-            <button onclick="insertText(')')">)</button>
-        </div>
-        
-        <div class="action-bar">
-            <button class="main-btn" onclick="executarCodigo()">Executar</button>
-            <div style="display: flex; gap: 15px;">
-                <button class="main-btn btn-red" onclick="limparTudo()">Limpar</button>
-                <button class="main-btn" onclick="copiarCodigo()">Copiar</button>
-            </div>
-        </div>
-    </div>
+<!-- APP WINDOW -->
+<div id="window">
+  <div class="hud">
+    <h1>BOOST // CORE</h1>
+    <button class="opt" onclick="closeApp()">Закрыть</button>
+    <button class="opt" onclick="startInvasion()">Вторжение</button>
+    <button class="opt" onclick="startOptimization()">Оптимизация</button>
+    <div id="log">Ожидание команды...</div>
+  </div>
+</div>
 
-    <script type="module">
-        const editor = document.getElementById('code-editor');
-        const suggestionBox = document.getElementById('suggestion-box');
-        const consoleOut = document.getElementById('console-output');
+<!-- OPTIMIZATION -->
+<div id="optimize">
+  <div id="terminal"></div>
+  <div class="bluebar"><div id="bluefill"></div></div>
+</div>
 
-        const dicionarioComandos = {
-            "portugol": [
-                { texto: "escreva", tipo: "Função" },
-                { texto: "inteiro", tipo: "Tipo" },
-                { texto: "se", tipo: "Estrutura" }
-            ],
-            "brainfuck": [
-                { texto: "++++++++", tipo: "Snippet" }
-            ]
-        };
+<!-- INVASION -->
+<div id="invasion">
+  <div id="invTerminal"></div>
+  <div class="bluebar"><div id="bluefillInv"></div></div>
 
-        window.insertText = (char) => {
-            const start = editor.selectionStart;
-            editor.setRangeText(char, start, editor.selectionEnd, 'end');
-            editor.focus();
-        };
+  <div id="invInput" style="display:none;margin-top:10px">
+    <input id="invName" placeholder="Имя цели"
+      style="width:100%;padding:8px;background:#000;border:1px solid #00ffcc;color:#00ffcc">
+    <button class="opt" onclick="askInvConfirm()">Продолжить</button>
+  </div>
 
-        window.limparTudo = () => {
-            if(confirm("Limpar tudo?")) {
-                editor.value = '';
-                consoleOut.innerHTML = 'Console limpo.';
-                suggestionBox.style.display = 'none';
-            }
-        };
+  <div id="invConfirm" style="display:none;margin-top:10px">
+    <div id="invText"></div>
+    <button class="opt" onclick="confirmInvasion()">Подтвердить</button>
+    <button class="opt" onclick="cancelInvasion()">Отмена</button>
+  </div>
 
-        window.copiarCodigo = () => {
-            navigator.clipboard.writeText(editor.value);
-            alert("Código copiado!");
-        };
+  <pre id="invFinal" style="display:none;margin-top:10px"></pre>
+</div>
 
-        editor.addEventListener('input', () => {
-            const linhas = editor.value.split('\n');
-            if (linhas[0] && linhas[0].toLowerCase().startsWith('language ')) {
-                const lang = linhas[0].replace(/language /i, '').trim().toLowerCase();
-                checarSugestoes(lang);
-            }
-        });
+<!-- NOTIFY -->
+<div id="notify">Оптимизация применена</div>
 
-        function checarSugestoes(lang) {
-            const cursorPosition = editor.selectionStart;
-            const textoAteCursor = editor.value.substring(0, cursorPosition);
-            const palavras = textoAteCursor.split(/[\s\n\+\-\[\]\(\)]/);
-            const ultimaPalavra = palavras[palavras.length - 1].toLowerCase();
+<script>
+const login = document.getElementById("login");
+const hotbar = document.getElementById("hotbar");
+const windowBox = document.getElementById("window");
+const optimize = document.getElementById("optimize");
+const invasion = document.getElementById("invasion");
+const terminal = document.getElementById("terminal");
+const invTerminal = document.getElementById("invTerminal");
+const bluefill = document.getElementById("bluefill");
+const bluefillInv = document.getElementById("bluefillInv");
+const invInput = document.getElementById("invInput");
+const invConfirm = document.getElementById("invConfirm");
+const invFinal = document.getElementById("invFinal");
+const invName = document.getElementById("invName");
+const invText = document.getElementById("invText");
+const notify = document.getElementById("notify");
 
-            if (ultimaPalavra.length > 0 && dicionarioComandos[lang]) {
-                const matches = dicionarioComandos[lang].filter(c => c.texto.startsWith(ultimaPalavra));
-                renderizarSugestoes(matches, ultimaPalavra);
-            } else {
-                suggestionBox.style.display = 'none';
-            }
-        }
+const lines = [
+  "@echo off",
+  "print(\"случайная фраза\")",
+  "const core = true;",
+  "System.out.println(\"OK\")",
+  "λ Ξ Ø ▓▒░",
+  "allocating memory...",
+  "cleaning cache...",
+  "rewriting sectors..."
+];
 
-        function renderizarSugestoes(lista, termo) {
-            if (lista.length === 0) { suggestionBox.style.display = 'none'; return; }
-            suggestionBox.innerHTML = '';
-            lista.forEach(item => {
-                const div = document.createElement('div');
-                div.className = 'suggestion-item';
-                div.innerHTML = `<span class="label">${item.texto}</span><span class="type">${item.tipo}</span>`;
-                div.onclick = () => {
-                    const inicio = editor.selectionStart - termo.length;
-                    editor.setRangeText(item.texto, inicio, editor.selectionStart, 'end');
-                    suggestionBox.style.display = 'none';
-                    editor.focus();
-                };
-                suggestionBox.appendChild(div);
-            });
-            suggestionBox.style.display = 'block';
-            suggestionBox.style.bottom = '180px'; 
-            suggestionBox.style.left = '20px';
-        }
+const invBase = [
+  "@echo off","scan ports...","λ Ξ ▓▒░","buffer ready"
+];
 
-        window.executarCodigo = async () => {
-            const code = editor.value;
-            const lines = code.split('\n');
-            
-            if (!lines[0] || !lines[0].toLowerCase().startsWith('language ')) {
-                alert("Erro: A primeira linha deve ser 'language NOME'");
-                return;
-            }
+const invHeavy = [
+  "injecting payload...",
+  "bypassing firewall...",
+  "decrypting hash...",
+  "root access granted"
+];
 
-            const lang = lines[0].replace(/language /i, '').trim().toLowerCase();
+function enter(){
+  login.style.display="none";
+  hotbar.style.display="flex";
+}
 
-            if (!lang) {
-                alert("Erro: Nome da linguagem inválido.");
-                return;
-            }
+function openApp(){
+  windowBox.style.display="flex";
+}
 
-            consoleOut.innerHTML = `Carregando interpretador: ${lang}...`;
+function closeApp(){
+  windowBox.style.display="none";
+}
 
-            try {
-                const modulePath = `./interpreters/${lang}.js`;
-                const module = await import(modulePath);
+function startOptimization(){
+  windowBox.style.display="none";
+  optimize.style.display="block";
+  terminal.innerHTML="";
+  bluefill.style.width="0%";
 
-                if (typeof module.run !== "function") {
-                    throw new Error("Função 'run' não exportada.");
-                }
+  let p=0;
+  let i=setInterval(()=>{
+    addLine(terminal,lines);
+    bluefill.style.width=p+"%";
+    p+=2;
+    if(p>=100){
+      clearInterval(i);
+      setTimeout(()=>{
+        optimize.style.display="none";
+        login.style.display="flex";
+        notify.style.display="block";
+        setTimeout(()=>notify.style.display="none",3000);
+      },600);
+    }
+  },100);
+}
 
-                consoleOut.innerHTML = `Executando...<br>`;
-                await module.run(code);
+function startInvasion(){
+  windowBox.style.display="none";
+  invasion.style.display="block";
+  invTerminal.innerHTML="";
+  bluefillInv.style.width="0%";
+  invInput.style.display="none";
+  invConfirm.style.display="none";
+  invFinal.style.display="none";
 
-            } catch (e) {
-                console.error(e);
-                consoleOut.innerHTML = `<span style="color:red">
-                Erro: Interpretador '${lang}' não encontrado ou inválido.
-                </span>`;
-            }
-        };
-    </script>
+  let p=0;
+  let i=setInterval(()=>{
+    addLine(invTerminal,invBase);
+    bluefillInv.style.width=p+"%";
+    p+=3;
+    if(p>=100){
+      clearInterval(i);
+      invInput.style.display="block";
+    }
+  },90);
+}
+
+function askInvConfirm(){
+  invInput.style.display="none";
+  invConfirm.style.display="block";
+  invText.innerText="Желаете атаковать "+(invName.value||"UNKNOWN")+"?";
+}
+
+function confirmInvasion(){
+  invConfirm.style.display="none";
+  let p=0;
+  let i=setInterval(()=>{
+    addLine(invTerminal,invHeavy);
+    bluefillInv.style.width=p+"%";
+    p+=5;
+    if(p>=100){
+      clearInterval(i);
+      invFinal.style.display="block";
+
+      const target = invName.value || "UNKNOWN";
+      const pass = Math.floor(Math.random()*900000+100000);
+const pa = Math.floor(Math.random()*1+25);
+
+      invFinal.textContent = `
+In- (${target})
+Pas;! (${pa})
+Jk = ('/Pas')- (5)/"Pass"\\
+V;+ = Jk, Pas y In/(:!:)
+Sucess
+Password: ${pass}
+      `;
+    }
+  },50);
+}
+
+function cancelInvasion(){
+  invasion.style.display="none";
+  windowBox.style.display="flex";
+}
+
+function addLine(el,arr){
+  let d=document.createElement("div");
+  d.textContent=arr[Math.floor(Math.random()*arr.length)];
+  el.appendChild(d);
+  el.scrollTop=el.scrollHeight;
+}
+</script>
+
 </body>
-</html>
+  </html>
