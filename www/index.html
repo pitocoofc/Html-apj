@@ -3,98 +3,260 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Ndj-lib Monitor</title>
+    <title>Multi-Interpreter Mobile</title>
     <style>
-        body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: #000; color: #fff; font-family: sans-serif; overflow: hidden; }
-        #splash-screen { position: fixed; width: 100%; height: 100%; background: #000; display: flex; align-items: center; justify-content: center; z-index: 1000; transition: 0.8s; }
-        .logo { border: 2px solid #fff; padding: 20px; font-weight: bold; font-size: 24px; border-radius: 15px; }
-        #app-content { display: none; height: 100%; flex-direction: column; align-items: center; justify-content: center; padding: 20px; text-align: center; }
-        
-        /* Status Dinâmico */
-        .status-box { width: 80%; padding: 20px; border-radius: 12px; background: #0a0a0a; border: 1px solid #1a1a1a; margin-top: 20px; }
-        #status-text { color: #ffcc00; font-weight: bold; text-transform: uppercase; letter-spacing: 2px; }
-        #console { margin-top: 15px; font-family: monospace; font-size: 11px; color: #555; text-align: left; height: 60px; overflow: hidden; }
-        
-        .error { color: #ff4444 !important; border-color: #ff4444 !important; }
-        .success { color: #00ff41 !important; }
+        /* CSS - ESTILO DARK E INTERFACE */
+        :root {
+            --bg-color: #1e272e;
+            --editor-bg: #2d3436;
+            --cyan: #00d2d3;
+            --red: #ff7675;
+            --text: #ffffff;
+            --suggestion-bg: #252d31;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-color);
+            color: var(--text);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        #editor-container {
+            flex: 1;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+
+        #code-editor {
+            flex: 1;
+            background: var(--editor-bg);
+            color: var(--text);
+            border: none;
+            padding: 15px;
+            font-family: 'Consolas', 'Courier New', monospace;
+            font-size: 16px;
+            outline: none;
+            resize: none;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        /* POP-UP DE SUGESTÕES (ESTILO PORTUGOL MOBILE) */
+        #suggestion-box {
+            position: absolute;
+            background: var(--suggestion-bg);
+            border: 1px solid #444;
+            border-radius: 4px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            z-index: 100;
+            max-height: 200px;
+            overflow-y: auto;
+            min-width: 180px;
+            display: none;
+        }
+
+        .suggestion-item {
+            padding: 10px 15px;
+            display: flex;
+            justify-content: space-between;
+            border-bottom: 1px solid #333;
+            cursor: pointer;
+        }
+
+        .suggestion-item:last-child { border-bottom: none; }
+        .suggestion-item .label { color: var(--cyan); font-weight: bold; }
+        .suggestion-item .type { color: #888; font-size: 12px; }
+        .suggestion-item.active { background: #3d484e; }
+
+        /* BARRA DE FERRAMENTAS E ATALHOS */
+        #toolbar {
+            background: var(--bg-color);
+            padding: 10px;
+            border-top: 1px solid #333;
+        }
+
+        .shortcut-bar {
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            padding-bottom: 10px;
+            scrollbar-width: none;
+        }
+
+        .shortcut-bar button {
+            background: transparent;
+            color: var(--cyan);
+            border: 1px solid var(--cyan);
+            padding: 5px 12px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+
+        .action-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .btn-group { display: flex; gap: 10px; }
+
+        button.main-btn {
+            background: transparent;
+            border: none;
+            color: var(--cyan);
+            font-weight: bold;
+            font-size: 14px;
+            text-transform: uppercase;
+            cursor: pointer;
+        }
+
+        .btn-red { color: var(--red) !important; }
     </style>
 </head>
 <body>
 
-    <div id="splash-screen"><div class="logo">NDJ-LIB</div></div>
+    <div id="editor-container">
+        <textarea id="code-editor" spellcheck="false" placeholder="language NomeDaLinguagem..."></textarea>
+        <div id="suggestion-box"></div>
+    </div>
 
-    <div id="app-content">
-        <h1 id="title">NDJ-LIB SISTEMA</h1>
-        <p id="subtitle">Monitorando diretório de instalação...</p>
-
-        <div class="status-box" id="box">
-            <div id="status-text">VERIFICANDO...</div>
-            <div id="console">Aguardando sinal do sistema...</div>
+    <div id="toolbar">
+        <div class="shortcut-bar">
+            <button onclick="insertText('+')">+</button>
+            <button onclick="insertText('-')">-</button>
+            <button onclick="insertText('*')">*</button>
+            <button onclick="insertText('/')">/</button>
+            <button onclick="insertText('(')">(</button>
+            <button onclick="insertText(')')">)</button>
+            <button onclick="insertText('{')">{</button>
+            <button onclick="insertText('}')">}</button>
+            <button onclick="insertText('\"')">"</button>
+        </div>
+        
+        <div class="action-bar">
+            <button class="main-btn" onclick="executarCodigo()">Executar</button>
+            <div class="btn-group">
+                <button class="main-btn btn-red" onclick="limparTudo()">Limpar Tudo</button>
+                <button class="main-btn" onclick="copiarCodigo()">Copiar</button>
+            </div>
         </div>
     </div>
 
     <script>
-        // Transição inicial
-        setTimeout(() => {
-            document.getElementById('splash-screen').style.opacity = '0';
-            setTimeout(() => {
-                document.getElementById('splash-screen').style.display = 'none';
-                document.getElementById('app-content').style.display = 'flex';
-                iniciarMonitoramento();
-            }, 800);
-        }, 3000);
+        /* JAVASCRIPT - LÓGICA E ORQUESTRADOR */
+        const editor = document.getElementById('code-editor');
+        const suggestionBox = document.getElementById('suggestion-box');
 
-        let segundosPassados = 0;
-        let verificado = false;
+        // Simulação de banco de dados de comandos (Você pode mover para os arquivos /interpreters/)
+        const dicionarioComandos = {
+            "portugol": [
+                { texto: "escreva", tipo: "Função" },
+                { texto: "escolha", tipo: "Sugestão" },
+                { texto: "inteiro", tipo: "Tipo" },
+                { texto: "logico", tipo: "Tipo" },
+                { texto: "inclua", tipo: "Biblioteca" }
+            ],
+            "brainfuck": [
+                { texto: "++++++++", tipo: "Snippet" },
+                { texto: "[->+<]", tipo: "Loop" }
+            ]
+        };
 
-        function atualizarLog(msg) {
-            const c = document.getElementById('console');
-            c.innerHTML = `> ${msg}<br>` + c.innerHTML;
-        }
-
-        async function verificarPasta() {
-            if(verificado) return;
-
-            segundosPassados += 5;
-            atualizarLog(`Checando pasta 'easy-djs-bot' (${segundosPassados}s)...`);
-
-            /* LÓGICA REAL DO CAPACITOR:
-               Aqui chamamos o Filesystem.readdir({ path: 'node_modules/easy-djs-bot' })
-               Como estamos no HTML, vamos simular a resposta do sistema.
-            */
+        // Identificador de linguagem e Sugestões
+        editor.addEventListener('input', () => {
+            const texto = editor.value;
+            const linhas = texto.split('\n');
+            const primeiraLinha = linhas[0].toLowerCase();
             
-            // SIMULAÇÃO: Se quiser testar o sucesso, mude para 'true'
-            let pastaExiste = false; 
+            if (primeiraLinha.startsWith('language ')) {
+                const lang = primeiraLinha.replace('language ', '').trim();
+                checarSugestoes(lang);
+            }
+        });
 
-            if (pastaExiste) {
-                finalizarSucesso();
-            } else if (segundosPassados >= 15) {
-                finalizarErro();
+        function checarSugestoes(lang) {
+            const texto = editor.value;
+            const cursorPosition = editor.selectionStart;
+            const palavras = texto.substring(0, cursorPosition).split(/\s/);
+            const ultimaPalavra = palavras[palavras.length - 1].toLowerCase();
+
+            if (ultimaPalavra.length > 0 && dicionarioComandos[lang]) {
+                const matches = dicionarioComandos[lang].filter(c => c.texto.startsWith(ultimaPalavra));
+                renderizarSugestoes(matches, ultimaPalavra);
+            } else {
+                suggestionBox.style.display = 'none';
             }
         }
 
-        function finalizarSucesso() {
-            verificado = true;
-            document.getElementById('status-text').innerText = "INSTALADO";
-            document.getElementById('status-text').className = "success";
-            document.getElementById('title').innerText = "BOT PRONTO";
-            atualizarLog("✅ Pasta detectada! Ndj-lib pronta para uso.");
-            clearInterval(monitor);
+        function renderizarSugestoes(lista, termo) {
+            if (lista.length === 0) {
+                suggestionBox.style.display = 'none';
+                return;
+            }
+
+            suggestionBox.innerHTML = '';
+            lista.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'suggestion-item';
+                // Destaca em verde a parte digitada
+                const textoFormatado = item.texto.replace(termo, `<span style="color:#2ecc71">${termo}</span>`);
+                div.innerHTML = `<span class="label">${textoFormatado}</span><span class="type">${item.tipo}</span>`;
+                div.onclick = () => completarTexto(item.texto, termo);
+                suggestionBox.appendChild(div);
+            });
+
+            suggestionBox.style.display = 'block';
+            // Posiciona o box acima do teclado (simplificado para mobile)
+            suggestionBox.style.bottom = '80px'; 
+            suggestionBox.style.left = '15px';
         }
 
-        function finalizarErro() {
-            verificado = true;
-            document.getElementById('status-text').innerText = "ERRO DE INSTALAÇÃO";
-            document.getElementById('box').className = "status-box error";
-            atualizarLog("❌ Tempo esgotado! Pasta não encontrada.");
-            atualizarLog("Verifique sua conexão ou o repositório Ndj-lib.");
-            clearInterval(monitor);
+        function completarTexto(completo, termo) {
+            const inicio = editor.selectionStart - termo.length;
+            const fim = editor.selectionStart;
+            editor.setRangeText(completo, inicio, fim, 'end');
+            suggestionBox.style.display = 'none';
+            editor.focus();
         }
 
-        let monitor;
-        function iniciarMonitoramento() {
-            // Verifica a cada 5 segundos conforme sua ideia
-            monitor = setInterval(verificarPasta, 5000);
+        // Ações dos Botões
+        function insertText(char) {
+            const start = editor.selectionStart;
+            const end = editor.selectionEnd;
+            editor.setRangeText(char, start, end, 'end');
+            editor.focus();
+        }
+
+        function limparTudo() {
+            if(confirm("Deseja limpar todo o código?")) {
+                editor.value = '';
+                suggestionBox.style.display = 'none';
+            }
+        }
+
+        async function executarCodigo() {
+            const code = editor.value;
+            const lines = code.split('\n');
+            if (!lines[0].toLowerCase().startsWith('language ')) {
+                alert("Erro: Use 'language NOME' na primeira linha!");
+                return;
+            }
+            const lang = lines[0].replace(/language /i, '').trim().toLowerCase();
+            
+            try {
+                // Tenta importar o arquivo da pasta /interpreters/
+                const module = await import(`./interpreters/${lang}.js`);
+                module.run(code);
+            } catch (e) {
+                alert(`Erro: Interpretador de '${lang}' não encontrado em /interpreters/`);
+            }
         }
     </script>
 </body>
