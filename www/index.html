@@ -1,358 +1,381 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>BOOST // CORE</title>
-<meta name="theme-color" content="#00ffcc">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Drone Farmer 3D OS - Pro</title>
+    <style>
+        :root {
+            --neon-green: #00ff99;
+            --farm-yellow: #ffd700;
+            --alert-red: #ff3333;
+            --bg-dark: #050505;
+            --panel-border: #222;
+        }
 
-<style>
-@import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
+        body {
+            background: var(--bg-dark);
+            color: #fff;
+            font-family: 'Consolas', monospace;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+            perspective: 1200px;
+        }
 
-*{
-  margin:0;
-  padding:0;
-  box-sizing:border-box;
-  font-family:'Share Tech Mono', monospace;
-}
+        #header {
+            height: 60px;
+            background: #111;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            border-bottom: 2px solid var(--panel-border);
+            z-index: 100;
+        }
 
-body{
-  background:radial-gradient(circle at center,#020202,#000);
-  color:#00ffcc;
-  height:100vh;
-  overflow:hidden;
-}
+        .stat span { color: var(--neon-green); font-weight: bold; }
 
-/* LOGIN */
-#login{
-  height:100%;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-}
+        /* VIEWPORT 3D OTIMIZADA */
+        #view-area {
+            flex: 1;
+            position: relative;
+            background: #000;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
 
-#login button{
-  padding:15px 40px;
-  font-size:1.1em;
-  border:1px solid #00ffcc;
-  background:none;
-  color:#00ffcc;
-  cursor:pointer;
-}
+        #farm-grid {
+            position: absolute;
+            width: 4000px;
+            height: 4000px;
+            display: grid;
+            grid-template-columns: repeat(60, 60px);
+            grid-template-rows: repeat(60, 60px);
+            gap: 12px;
+            padding: 20px;
+            transform-style: preserve-3d;
+            will-change: transform; /* Otimização de Performance */
+            transition: transform 0.2s ease-out; /* Movimento mais liso */
+        }
 
-#login button:hover{
-  background:#00ffcc22;
-}
+        .crop-block {
+            width: 60px;
+            height: 60px;
+            background: var(--farm-yellow);
+            border-radius: 5px;
+            box-shadow: 0 5px 0 #b8860b;
+        }
 
-/* HOTBAR */
-#hotbar{
-  position:fixed;
-  bottom:10px;
-  left:50%;
-  transform:translateX(-50%);
-  display:none;
-  gap:10px;
-}
+        /* DRONE 3D */
+        #drone-container {
+            width: 50px;
+            height: 50px;
+            position: relative;
+            z-index: 50;
+            transform-style: preserve-3d;
+        }
 
-.app{
-  width:50px;
-  height:50px;
-  border:1px solid #00ffcc;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  cursor:pointer;
-  box-shadow:0 0 10px #00ffcc44;
-}
+        #drone {
+            width: 100%;
+            height: 100%;
+            background: var(--neon-green);
+            box-shadow: 0 0 30px var(--neon-green);
+            border-radius: 5px;
+            transform: rotateX(45deg) rotateZ(45deg) translateZ(30px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #000;
+            font-size: 10px;
+            font-weight: bold;
+            animation: hover 1.5s ease-in-out infinite;
+        }
 
-.app:hover{
-  background:#00ffcc22;
-}
+        @keyframes hover {
+            0%, 100% { transform: rotateX(45deg) rotateZ(45deg) translateZ(30px); }
+            50% { transform: rotateX(45deg) rotateZ(45deg) translateZ(45px); }
+        }
 
-/* WINDOW */
-#window{
-  position:fixed;
-  inset:0;
-  display:none;
-  align-items:center;
-  justify-content:center;
-}
+        /* CODE AREA */
+        #code-area {
+            height: 45%;
+            background: #000;
+            border-top: 3px solid var(--panel-border);
+            display: flex;
+        }
 
-.hud{
-  width:90%;
-  max-width:420px;
-  border:1px solid #00ffcc55;
-  padding:20px;
-  box-shadow:0 0 25px #00ffcc44;
-}
+        #editor-container {
+            display: flex;
+            flex: 1;
+            position: relative;
+        }
 
-h1{
-  text-align:center;
-  margin-bottom:20px;
-}
+        #line-numbers {
+            width: 35px;
+            background: #111;
+            color: #444;
+            padding: 10px 5px;
+            text-align: right;
+            font-size: 14px;
+        }
 
-button.opt{
-  width:100%;
-  margin:6px 0;
-  background:none;
-  border:1px solid #00ffcc;
-  color:#00ffcc;
-  padding:10px;
-  cursor:pointer;
-}
+        #code-input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: var(--neon-green);
+            padding: 10px;
+            resize: none;
+            outline: none;
+            font-family: inherit;
+            font-size: 15px;
+            line-height: 22px;
+        }
 
-button.opt:hover{
-  background:#00ffcc22;
-}
+        /* ACTIONS */
+        #actions {
+            width: 220px;
+            background: #0a0a0a;
+            border-left: 2px solid var(--panel-border);
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
 
-#log{
-  margin-top:15px;
-  font-size:0.85em;
-  text-align:center;
-  opacity:0.8;
-}
+        button {
+            padding: 12px;
+            background: #1a1a1a;
+            color: #fff;
+            border: 1px solid #333;
+            cursor: pointer;
+            font-family: inherit;
+            transition: 0.2s;
+        }
 
-/* OPTIMIZE / INVASION */
-#optimize,
-#invasion{
-  position:fixed;
-  inset:0;
-  display:none;
-  background:#000;
-  padding:15px;
-}
+        #run-btn { border-color: var(--neon-green); color: var(--neon-green); }
+        #run-btn.stop-mode { border-color: var(--alert-red); color: var(--alert-red); }
+        #upgrade-btn { background: var(--neon-green); color: #000; font-weight: bold; border: none; }
+        
+        #cheat-btn {
+            position: fixed;
+            right: 5px;
+            top: 50%;
+            width: 20px;
+            height: 20px;
+            background: transparent;
+            border: none;
+            color: #111;
+            cursor: pointer;
+            z-index: 1000;
+        }
 
-#terminal,
-#invTerminal{
-  height:60%;
-  overflow:hidden;
-  font-size:0.75em;
-}
-
-.bluebar{
-  width:100%;
-  height:14px;
-  border:1px solid #00aaff;
-  margin-top:10px;
-}
-
-#bluefill,
-#bluefillInv{
-  height:100%;
-  width:0%;
-  background:linear-gradient(90deg,#00aaff,#33ccff);
-  transition:width 0.1s;
-}
-
-/* NOTIFY */
-#notify{
-  position:fixed;
-  top:15px;
-  right:15px;
-  background:#001b22;
-  border:1px solid #00ffcc;
-  padding:10px 14px;
-  display:none;
-  box-shadow:0 0 15px #00ffcc55;
-  font-size:0.8em;
-}
-</style>
+        #system-log {
+            position: absolute;
+            bottom: 20px;
+            right: 240px;
+            width: 280px;
+            height: 120px;
+            background: rgba(0,0,0,0.9);
+            border: 1px solid #222;
+            font-size: 11px;
+            padding: 10px;
+            overflow: hidden;
+            pointer-events: none;
+        }
+    </style>
 </head>
 <body>
 
-<!-- LOGIN -->
-<div id="login">
-  <button onclick="enter()">Для входа</button>
+<div id="header">
+    <div class="stat">LVL: <span id="lvl">1</span></div>
+    <div class="stat">CASH: <span id="cash">$0</span></div>
+    <div class="stat">UPGRADE: <span id="cost">$5M</span></div>
+    <div class="stat">UNIT: <span id="lpb">$100k</span></div>
 </div>
 
-<!-- HOTBAR -->
-<div id="hotbar">
-  <div class="app" onclick="openApp()">A</div>
-  <div class="app" onclick="openApp()">B</div>
-  <div class="app" onclick="openApp()">C</div>
+<div id="view-area">
+    <div id="farm-grid"></div>
+    <div id="drone-container">
+        <div id="drone">DRONE</div>
+    </div>
 </div>
 
-<!-- APP WINDOW -->
-<div id="window">
-  <div class="hud">
-    <h1>BOOST // CORE</h1>
-    <button class="opt" onclick="closeApp()">Закрыть</button>
-    <button class="opt" onclick="startInvasion()">Вторжение</button>
-    <button class="opt" onclick="startOptimization()">Оптимизация</button>
-    <div id="log">Ожидание команды...</div>
-  </div>
+<button id="cheat-btn" onclick="openCheat()">.</button>
+
+<div id="code-area">
+    <div id="editor-container">
+        <div id="line-numbers"></div>
+        <textarea id="code-input" spellcheck="false" placeholder="collect&#10;move right&#10;loop"></textarea>
+        
+        <div id="actions">
+            <button id="run-btn" onclick="handleRun()">EXECUTAR SCRIPT</button>
+            <button id="upgrade-btn" onclick="upgradeLevel()">UPGRADE SYSTEM</button>
+            <div id="info" style="font-size: 10px; color: #444;">
+                Loop (LVL 15) permite execução infinita.
+            </div>
+        </div>
+    </div>
 </div>
 
-<!-- OPTIMIZATION -->
-<div id="optimize">
-  <div id="terminal"></div>
-  <div class="bluebar"><div id="bluefill"></div></div>
-</div>
-
-<!-- INVASION -->
-<div id="invasion">
-  <div id="invTerminal"></div>
-  <div class="bluebar"><div id="bluefillInv"></div></div>
-
-  <div id="invInput" style="display:none;margin-top:10px">
-    <input id="invName" placeholder="Имя цели"
-      style="width:100%;padding:8px;background:#000;border:1px solid #00ffcc;color:#00ffcc">
-    <button class="opt" onclick="askInvConfirm()">Продолжить</button>
-  </div>
-
-  <div id="invConfirm" style="display:none;margin-top:10px">
-    <div id="invText"></div>
-    <button class="opt" onclick="confirmInvasion()">Подтвердить</button>
-    <button class="opt" onclick="cancelInvasion()">Отмена</button>
-  </div>
-
-  <pre id="invFinal" style="display:none;margin-top:10px"></pre>
-</div>
-
-<!-- NOTIFY -->
-<div id="notify">Оптимизация применена</div>
+<div id="system-log"></div>
 
 <script>
-const login = document.getElementById("login");
-const hotbar = document.getElementById("hotbar");
-const windowBox = document.getElementById("window");
-const optimize = document.getElementById("optimize");
-const invasion = document.getElementById("invasion");
-const terminal = document.getElementById("terminal");
-const invTerminal = document.getElementById("invTerminal");
-const bluefill = document.getElementById("bluefill");
-const bluefillInv = document.getElementById("bluefillInv");
-const invInput = document.getElementById("invInput");
-const invConfirm = document.getElementById("invConfirm");
-const invFinal = document.getElementById("invFinal");
-const invName = document.getElementById("invName");
-const invText = document.getElementById("invText");
-const notify = document.getElementById("notify");
+    let state = {
+        money: 0,
+        level: 1,
+        baseProfit: 100000,
+        posX: 0,
+        posY: 0,
+        looping: false,
+        interval: null
+    };
 
-const lines = [
-  "@echo off",
-  "print(\"случайная фраза\")",
-  "const core = true;",
-  "System.out.println(\"OK\")",
-  "λ Ξ Ø ▓▒░",
-  "allocating memory...",
-  "cleaning cache...",
-  "rewriting sectors..."
-];
-
-const invBase = [
-  "@echo off","scan ports...","λ Ξ ▓▒░","buffer ready"
-];
-
-const invHeavy = [
-  "injecting payload...",
-  "bypassing firewall...",
-  "decrypting hash...",
-  "root access granted"
-];
-
-function enter(){
-  login.style.display="none";
-  hotbar.style.display="flex";
-}
-
-function openApp(){
-  windowBox.style.display="flex";
-}
-
-function closeApp(){
-  windowBox.style.display="none";
-}
-
-function startOptimization(){
-  windowBox.style.display="none";
-  optimize.style.display="block";
-  terminal.innerHTML="";
-  bluefill.style.width="0%";
-
-  let p=0;
-  let i=setInterval(()=>{
-    addLine(terminal,lines);
-    bluefill.style.width=p+"%";
-    p+=2;
-    if(p>=100){
-      clearInterval(i);
-      setTimeout(()=>{
-        optimize.style.display="none";
-        login.style.display="flex";
-        notify.style.display="block";
-        setTimeout(()=>notify.style.display="none",3000);
-      },600);
+    // Inicializa Grid
+    const grid = document.getElementById('farm-grid');
+    for(let i = 0; i < 3600; i++) {
+        const b = document.createElement('div');
+        b.className = 'crop-block';
+        grid.appendChild(b);
     }
-  },100);
-}
 
-function startInvasion(){
-  windowBox.style.display="none";
-  invasion.style.display="block";
-  invTerminal.innerHTML="";
-  bluefillInv.style.width="0%";
-  invInput.style.display="none";
-  invConfirm.style.display="none";
-  invFinal.style.display="none";
+    const codeInput = document.getElementById('code-input');
+    const runBtn = document.getElementById('run-btn');
 
-  let p=0;
-  let i=setInterval(()=>{
-    addLine(invTerminal,invBase);
-    bluefillInv.style.width=p+"%";
-    p+=3;
-    if(p>=100){
-      clearInterval(i);
-      invInput.style.display="block";
+    function log(msg, color = "#888") {
+        const sLog = document.getElementById('system-log');
+        const entry = document.createElement('div');
+        entry.style.color = color;
+        entry.innerHTML = `> ${msg}`;
+        sLog.prepend(entry);
     }
-  },90);
-}
 
-function askInvConfirm(){
-  invInput.style.display="none";
-  invConfirm.style.display="block";
-  invText.innerText="Желаете атаковать "+(invName.value||"UNKNOWN")+"?";
-}
+    const CMD_LVL = {
+        "collect": 1, "move": 5, "goto": 6, "home": 7, "scan": 8, 
+        "drop": 9, "wait": 11, "while": 12, "if": 14, "loop": 15
+    };
 
-function confirmInvasion(){
-  invConfirm.style.display="none";
-  let p=0;
-  let i=setInterval(()=>{
-    addLine(invTerminal,invHeavy);
-    bluefillInv.style.width=p+"%";
-    p+=5;
-    if(p>=100){
-      clearInterval(i);
-      invFinal.style.display="block";
+    const SYN = {
+        "move": ["move", "mover", "m"],
+        "right": ["right", "r", "x", "direta"],
+        "left": ["left", "l"],
+        "up": ["up", "u", "cima"],
+        "down": ["down", "d", "baixo"]
+    };
 
-      const target = invName.value || "UNKNOWN";
-      const pass = Math.floor(Math.random()*900000+100000);
-const pa = Math.floor(Math.random()*1+25);
-
-      invFinal.textContent = `
-In- (${target})
-Pas;! (${pa})
-Jk = ('/Pas')- (5)/"Pass"\\
-V;+ = Jk, Pas y In/(:!:)
-Sucess
-Password: ${pass}
-      `;
+    function handleRun() {
+        if (state.looping) {
+            stopExecution();
+        } else {
+            startExecution();
+        }
     }
-  },50);
-}
 
-function cancelInvasion(){
-  invasion.style.display="none";
-  windowBox.style.display="flex";
-}
+    function startExecution() {
+        const code = codeInput.value.toLowerCase().trim();
+        const hasLoop = code.includes('loop');
 
-function addLine(el,arr){
-  let d=document.createElement("div");
-  d.textContent=arr[Math.floor(Math.random()*arr.length)];
-  el.appendChild(d);
-  el.scrollTop=el.scrollHeight;
-}
+        if (hasLoop && state.level < 15) {
+            log("Erro: Comando LOOP requer LVL 15", "red");
+            return;
+        }
+
+        if (hasLoop) {
+            state.looping = true;
+            runBtn.innerText = "PARAR SCRIPT";
+            runBtn.classList.add('stop-mode');
+            state.interval = setInterval(executeLines, 150); // Execução contínua otimizada
+            log("Execução infinita iniciada...", "yellow");
+        } else {
+            executeLines();
+        }
+    }
+
+    function stopExecution() {
+        state.looping = false;
+        clearInterval(state.interval);
+        runBtn.innerText = "EXECUTAR SCRIPT";
+        runBtn.classList.remove('stop-mode');
+        log("Execução encerrada.");
+    }
+
+    function executeLines() {
+        const lines = codeInput.value.split('\n');
+        lines.forEach((line) => {
+            let p = line.toLowerCase().trim().split(/\s+/);
+            if (!p[0] || p[0] === 'loop') return;
+
+            let cmd = p[0];
+            let arg = p[1];
+
+            if (SYN.move.includes(cmd)) cmd = "move";
+            if (["collect", "c", "click"].includes(cmd)) cmd = "collect";
+
+            if (CMD_LVL[cmd] && state.level >= CMD_LVL[cmd]) {
+                if (cmd === 'collect') {
+                    let profit = state.baseProfit * (1 + (state.level * 0.15));
+                    state.money += profit;
+                } else if (cmd === 'move') {
+                    moveGrid(arg);
+                }
+            }
+        });
+        updateDisplay();
+    }
+
+    function moveGrid(dir) {
+        let step = 72;
+        if (SYN.right.includes(dir)) state.posX -= step;
+        else if (SYN.left.includes(dir)) state.posX += step;
+        else if (SYN.up.includes(dir)) state.posY += step;
+        else if (SYN.down.includes(dir)) state.posY -= step;
+        
+        // translate3d força aceleração de hardware (GPU)
+        grid.style.transform = `rotateX(20deg) translate3d(${state.posX}px, ${state.posY}px, 0)`;
+    }
+
+    function upgradeLevel() {
+        let cost = state.level * 5000000;
+        if (state.money >= cost) {
+            state.money -= cost;
+            state.level++;
+            if (state.level === 8) state.money = 0;
+            updateDisplay();
+            log(`Upgrade! Nível ${state.level}`, "var(--neon-green)");
+        } else {
+            log("Saldo insuficiente!", "red");
+        }
+    }
+
+    function openCheat() {
+        let pass = prompt("CODE:");
+        if (pass === "123456") {
+            state.money += 750000000;
+            updateDisplay();
+            log("CHEAT ATIVADO: +$750M", "var(--neon-green)");
+        }
+    }
+
+    function updateDisplay() {
+        document.getElementById('lvl').innerText = state.level;
+        document.getElementById('cash').innerText = `$${Math.floor(state.money).toLocaleString()}`;
+        document.getElementById('cost').innerText = `$${(state.level * 5)}M`;
+        document.getElementById('lpb').innerText = `$${Math.floor(state.baseProfit * (1 + (state.level * 0.15))).toLocaleString()}`;
+    }
+
+    // Ajuste inicial
+    grid.style.transform = "rotateX(20deg) translate3d(0,0,0)";
+    updateDisplay();
+
+    // Line Numbers
+    codeInput.addEventListener('input', () => {
+        const lines = codeInput.value.split('\n').length;
+        document.getElementById('line-numbers').innerHTML = Array.from({length: Math.min(lines, 25)}, (_, i) => i + 1).join('<br>');
+    });
 </script>
-
 </body>
-  </html>
+</html>
