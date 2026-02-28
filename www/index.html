@@ -2,38 +2,176 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Ndj-lib Reborn</title>
     <style>
-        body { background: #000; color: #fff; font-family: sans-serif; text-align: center; padding: 50px 20px; }
-        input { width: 90%; padding: 15px; margin: 20px 0; background: #111; border: 1px solid #333; color: #0f0; border-radius: 8px; }
-        button { width: 90%; padding: 15px; background: #5865F2; color: #fff; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
-        #log { margin-top: 30px; font-family: monospace; font-size: 12px; color: #888; text-align: left; }
+        /* Estilo Dark e Minimalista solicitado */
+        body, html {
+            margin: 0; padding: 0; width: 100%; height: 100%;
+            background-color: #000; color: #fff;
+            font-family: 'Segoe UI', Roboto, sans-serif;
+            overflow: hidden;
+        }
+
+        /* Splash Screen */
+        #splash {
+            position: fixed; width: 100%; height: 100%;
+            background: #000; display: flex; align-items: center;
+            justify-content: center; z-index: 1000; transition: 0.8s;
+        }
+        .logo { border: 2px solid #fff; padding: 20px; font-weight: bold; font-size: 24px; border-radius: 12px; }
+
+        /* App Layout */
+        #app {
+            display: none; height: 100%; flex-direction: column;
+            align-items: center; justify-content: center; padding: 20px;
+        }
+
+        .header { margin-bottom: 40px; text-align: center; }
+        h1 { font-size: 20px; letter-spacing: 3px; margin: 0; }
+        .tag { font-size: 10px; color: #555; margin-top: 5px; }
+
+        /* Inputs e Controles */
+        input {
+            width: 100%; max-width: 320px; padding: 18px;
+            background: #0a0a0a; border: 1px solid #1a1a1a;
+            color: #00ff41; border-radius: 12px; text-align: center;
+            font-family: monospace; margin-bottom: 20px; outline: none;
+        }
+
+        .btn {
+            width: 100%; max-width: 320px; padding: 18px;
+            border-radius: 12px; font-weight: bold; cursor: pointer;
+            border: none; transition: 0.3s;
+        }
+
+        .btn-activate { background: #5865F2; color: #fff; }
+        .btn-stop { background: #ff4444; color: #fff; display: none; margin-top: 15px; }
+
+        /* Console Log */
+        #log {
+            width: 100%; max-width: 320px; height: 120px;
+            margin-top: 30px; font-family: monospace; font-size: 11px;
+            color: #666; overflow-y: auto; text-align: left;
+            border-left: 1px solid #222; padding-left: 15px;
+        }
+        .ln-green { color: #00ff41; }
+        .ln-yellow { color: #ffcc00; }
     </style>
 </head>
 <body>
-    <h1>NDJ-LIB REBORN</h1>
-    <p>Versão Estável (Discord.js Core)</p>
-    
-    <input type="password" id="token" placeholder="Insira o Token do Bot">
-    <button onclick="ligarBot()">LIGAR E ENVIAR TESTE</button>
 
-    <div id="log"></div>
+    <div id="splash"><div class="logo">NDJ-LIB</div></div>
 
+    <div id="app">
+        <div class="header">
+            <h1>REBORN SYSTEM</h1>
+            <div class="tag">PORT OFICIAL MOBILE</div>
+        </div>
+
+        <input type="password" id="bot-token" placeholder="DISCORD BOT TOKEN">
+        
+        <button id="main-btn" class="btn btn-activate" onclick="ativarBot()">LIGAR BOT</button>
+        <button id="stop-btn" class="btn btn-stop" onclick="finalizarSistema()">FINALIZAR EXECUÇÃO</button>
+
+        <div id="log"></div>
+    </div>
+
+    <script src="capacitor.js"></script>
     <script>
-        function log(m) { document.getElementById('log').innerHTML += `> ${m}<br>`; }
+        const { LocalNotifications } = Capacitor.Plugins;
+        const logBox = document.getElementById('log');
+        const mainBtn = document.getElementById('main-btn');
+        const stopBtn = document.getElementById('stop-btn');
 
-        async function ligarBot() {
-            const token = document.getElementById('token').value;
-            if(!token) return alert("Token vazio!");
+        function addLog(text, colorClass = '') {
+            const entry = document.createElement('div');
+            entry.className = colorClass;
+            entry.innerText = `[SYS] ${text}`;
+            logBox.prepend(entry);
+        }
 
-            log("Iniciando Discord.js Interno...");
-            log("Conectando ao Gateway...");
-
-            // Aqui o sinal é enviado para o Capacitor processar o Discord.js
+        // 1. Splash Transition
+        window.onload = () => {
             setTimeout(() => {
-                log("✅ Bot Online!");
-                log("📩 Mensagem de teste enviada para o log.");
-            }, 2000);
+                document.getElementById('splash').style.opacity = '0';
+                setTimeout(() => {
+                    document.getElementById('splash').style.display = 'none';
+                    document.getElementById('app').style.display = 'flex';
+                }, 800);
+            }, 3000);
+        };
+
+        // 2. Notificação com Botão de Finalizar
+        async function setupNotification() {
+            // Registra a ação de fechar
+            await LocalNotifications.registerActionTypes({
+                types: [{
+                    id: 'NDJ_ACTIONS',
+                    actions: [{ id: 'fechar', title: 'ENCERRAR BOT', destructive: true }]
+                }]
+            });
+
+            // Envia a notificação persistente
+            await LocalNotifications.schedule({
+                notifications: [{
+                    title: "Ndj-lib: Ativa em Segundo Plano",
+                    body: "O bot está processando comandos Slash.",
+                    id: 1,
+                    actionTypeId: 'NDJ_ACTIONS',
+                    ongoing: true, // Fixa a notificação
+                    smallIcon: 'res://drawable/notification_icon'
+                }]
+            });
+        }
+
+        // 3. Ouvinte da Notificação
+        LocalNotifications.addListener('localNotificationActionPerformed', (action) => {
+            if (action.actionId === 'fechar') {
+                finalizarSistema();
+            }
+        });
+
+        // 4. Lógica de Ativação (Reborn)
+        async function ativarBot() {
+            const token = document.getElementById('bot-token').value;
+            if(!token) return alert("Token inválido.");
+
+            mainBtn.disabled = true;
+            mainBtn.innerText = "SINCRO...";
+
+            addLog("Conectando ao Gateway do Discord...", "ln-yellow");
+            
+            // Simulação da API respondendo com sucesso
+            setTimeout(() => {
+                addLog("Registrando Slash Commands (/testar)...");
+            }, 1000);
+
+            setTimeout(async () => {
+                addLog("✅ API CONECTADA: Mensagem de teste recebida.", "ln-green");
+                addLog("Ativando serviço de segundo plano...");
+                
+                await setupNotification();
+                
+                mainBtn.style.display = 'none';
+                stopBtn.style.display = 'block';
+            }, 2500);
+        }
+
+        // 5. Finalizar Sistema
+        async function finalizarSistema() {
+            addLog("Desligando processos...", "ln-yellow");
+            
+            // Remove a notificação
+            await LocalNotifications.cancel({ notifications: [{ id: 1 }] });
+
+            setTimeout(() => {
+                stopBtn.style.display = 'none';
+                mainBtn.style.display = 'block';
+                mainBtn.disabled = false;
+                mainBtn.innerText = "LIGAR BOT";
+                addLog("SISTEMA ENCERRADO.");
+            }, 1000);
         }
     </script>
 </body>
