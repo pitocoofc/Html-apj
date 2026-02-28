@@ -1,4 +1,4 @@
-name: Gerar APK Capacitor
+name: Gerar APK Ndj-lib Reborn
 on: [push]
 jobs:
   build:
@@ -19,26 +19,36 @@ jobs:
 
       - name: Instalar e Construir
         run: |
-          # Instala as dependências do Capacitor
+          # 1. Instala dependências (incluindo LocalNotifications para evitar o erro 404)
           npm install
           
-          # Cria a pasta do Android que não existe no seu repo
+          # 2. Cria a pasta do Android
           npx cap add android
           
-          # INJEÇÃO DE PERMISSÃO: Permite ao app ver os 15MB da ndj-lib
+          # 3. INJEÇÃO DE PERMISSÕES CRÍTICAS
           MANIFEST="android/app/src/main/AndroidManifest.xml"
+          
+          # Permissões de Rede (Resolve o "Falha no Fetch")
+          sed -i '/<application/i \    <uses-permission android:name="android.permission.INTERNET" />' $MANIFEST
+          sed -i '/<application/i \    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />' $MANIFEST
+          
+          # Permissões de Segundo Plano e Notificação (Android 13+)
+          sed -i '/<application/i \    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />' $MANIFEST
+          sed -i '/<application/i \    <uses-permission android:name="android.permission.WAKE_LOCK" />' $MANIFEST
+          sed -i '/<application/i \    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />' $MANIFEST
+          
+          # Permissões de Armazenamento (Seu plano original)
           sed -i '/<application/i \    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />' $MANIFEST
           sed -i '/<application/i \    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />' $MANIFEST
-          sed -i '/<application/i \    <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" />' $MANIFEST
           
-          # Sincroniza o seu HTML com o projeto Android
+          # 4. Sincroniza o seu HTML com o projeto Android
           npx cap sync
           
-          # Compila o APK real
+          # 5. Compila o APK real
           cd android && chmod +x gradlew && ./gradlew assembleDebug
 
       - name: Subir APK
         uses: actions/upload-artifact@v4
         with:
-          name: ndj-portable-apk
+          name: ndj-reborn-apk
           path: android/app/build/outputs/apk/debug/*.apk
