@@ -2,6 +2,7 @@
   "name": "meu-jogo-clique",
   "version": "1.0.0",
 "dependencies": {
+  "@capacitor-community/background-service": "^5.0.0",
     "discord.js": "^14.0.0",
     "@capacitor/android": "^5.0.0",
     "@capacitor/core": "^5.0.0"
