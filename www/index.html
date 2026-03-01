@@ -3,220 +3,147 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Ndj-lib Reborn</title>
+    <title>Booting System...</title>
     <style>
-        body, html { margin: 0; padding: 0; width: 100%; height: 100%; background-color: #000; color: #fff; font-family: 'Segoe UI', Roboto, sans-serif; overflow: hidden; }
-        #splash { position: fixed; width: 100%; height: 100%; background: #000; display: flex; align-items: center; justify-content: center; z-index: 1000; transition: 0.8s; }
-        .logo { border: 2px solid #fff; padding: 20px; font-weight: bold; font-size: 24px; border-radius: 12px; }
-        #app { display: none; height: 100%; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
-        .header { margin-bottom: 40px; text-align: center; }
-        h1 { font-size: 20px; letter-spacing: 3px; margin: 0; }
-        .tag { font-size: 10px; color: #555; margin-top: 5px; }
-        input { width: 100%; max-width: 320px; padding: 18px; background: #0a0a0a; border: 1px solid #1a1a1a; color: #00ff41; border-radius: 12px; text-align: center; font-family: monospace; margin-bottom: 20px; outline: none; }
-        .btn { width: 100%; max-width: 320px; padding: 18px; border-radius: 12px; font-weight: bold; cursor: pointer; border: none; transition: 0.3s; }
-        .btn-activate { background: #5865F2; color: #fff; }
-        .btn-stop { background: #ff4444; color: #fff; display: none; margin-top: 15px; }
-        #log { width: 100%; max-width: 320px; height: 120px; margin-top: 30px; font-family: monospace; font-size: 11px; color: #666; overflow-y: auto; text-align: left; border-left: 1px solid #222; padding-left: 15px; }
-        .ln-green { color: #00ff41; }
-        .ln-yellow { color: #ffcc00; }
-        .ln-red { color: #ff4444; }
+        * { box-sizing: border-box; }
+        body {
+            background: #050505; color: #fff; margin: 0;
+            height: 100vh; display: flex; align-items: center; justify-content: center;
+            font-family: 'Consolas', 'Monaco', monospace; overflow: hidden;
+        }
+
+        .screen { display: none; flex-direction: column; align-items: center; width: 90%; max-width: 400px; }
+        .active { display: flex; }
+
+        /* Spinner Cinza */
+        .spinner {
+            width: 14px; height: 14px; border: 2px solid #333;
+            border-top: 2px solid #fff; border-radius: 50%;
+            display: inline-block; animation: spin 1s linear infinite;
+            vertical-align: middle; margin-right: 10px;
+        }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+
+        /* Estilo dos Logs */
+        #log-container { text-align: left; width: 100%; font-size: 13px; line-height: 1.8; }
+        .log-entry { color: #555; transition: color 0.4s; margin-bottom: 5px; }
+        .log-entry.done { color: #eee; }
+        .log-entry.done .spinner { display: none; }
+        .log-entry.done::before { content: '[ OK ] '; color: #0f0; margin-right: 5px; }
+
+        /* Input de Nome */
+        input {
+            background: transparent; border: none; border-bottom: 2px solid #3b82f6;
+            color: #fff; padding: 10px; font-size: 18px; text-align: center;
+            outline: none; width: 100%; margin-top: 20px;
+        }
+
+        /* Barra de Progresso Final */
+        .progress-bar { width: 100%; height: 2px; background: #222; margin-top: 20px; overflow: hidden; }
+        .fill { height: 100%; background: #3b82f6; width: 0%; transition: width 0.1s; }
     </style>
 </head>
 <body>
 
-    <div id="splash"><div class="logo">NDJ-LIB</div></div>
-
-    <div id="app">
-        <div class="header">
-            <h1>REBORN SYSTEM</h1>
-            <div class="tag">PORT OFICIAL MOBILE</div>
-        </div>
-        <input type="password" id="bot-token" placeholder="DISCORD BOT TOKEN">
-        <button id="main-btn" class="btn btn-activate" onclick="ativarBot()">LIGAR BOT</button>
-        <button id="stop-btn" class="btn btn-stop" onclick="finalizarSistema()">FINALIZAR EXECUÇÃO</button>
-        <div id="log"></div>
+    <div id="phase1" class="screen active">
+        <div style="font-size: 24px; letter-spacing: 5px; margin-bottom: 20px;">SYSTEM</div>
+        <div class="progress-bar"><div id="fill1" class="fill"></div></div>
     </div>
 
-    <script src="capacitor.js"></script>
+    <div id="phase2" class="screen">
+        <label>IDENTIFIQUE-SE NO TERMINAL:</label>
+        <input type="text" id="username" autocomplete="off" placeholder="Digite seu nome..." autofocus>
+        <p style="font-size: 10px; color: #444; margin-top: 10px;">PRESSIONE ENTER PARA CONFIRMAR</p>
+    </div>
+
+    <div id="phase3" class="screen">
+        <div id="log-container"></div>
+    </div>
+
+    <div id="phase4" class="screen">
+        <div id="user-welcome" style="margin-bottom: 10px; font-size: 14px;"></div>
+        <div class="status-text" style="font-size: 10px; color: #888;">FINALIZANDO SETUP...</div>
+        <div class="progress-bar"><div id="fill2" class="fill"></div></div>
+    </div>
+
     <script>
-        const { LocalNotifications, CapacitorHttp } = Capacitor.Plugins;
-        const logBox = document.getElementById('log');
-        const mainBtn = document.getElementById('main-btn');
-        const stopBtn = document.getElementById('stop-btn');
-        
-        let socket = null;
-        let heartbeatInterval = null;
-        let watchdogInterval = null;
-        let currentToken = "";
+        const phase1 = document.getElementById('phase1');
+        const phase2 = document.getElementById('phase2');
+        const phase3 = document.getElementById('phase3');
+        const phase4 = document.getElementById('phase4');
 
-        function addLog(text, colorClass = '') {
-            const entry = document.createElement('div');
-            entry.className = colorClass;
-            entry.innerText = `> ${text}`;
-            logBox.prepend(entry);
-        }
+        // Inicia Fase 1
+        let p1 = 0;
+        const int1 = setInterval(() => {
+            p1 += 2;
+            document.getElementById('fill1').style.width = p1 + "%";
+            if(p1 >= 100) {
+                clearInterval(int1);
+                phase1.classList.remove('active');
+                phase2.classList.add('active');
+                document.getElementById('username').focus();
+            }
+        }, 30);
 
-        window.onload = () => {
-            setTimeout(() => {
-                document.getElementById('splash').style.opacity = '0';
-                setTimeout(() => {
-                    document.getElementById('splash').style.display = 'none';
-                    document.getElementById('app').style.display = 'flex';
-                }, 800);
-            }, 3000);
-        };
+        // Lógica de Input
+        document.getElementById('username').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' && this.value.length > 2) {
+                localStorage.setItem('os_user', this.value);
+                phase2.classList.remove('active');
+                startLogs();
+            }
+        });
 
-        // Watchdog: Verifica a conexão a cada 20 segundos
-        function startWatchdog() {
-            if(watchdogInterval) clearInterval(watchdogInterval);
-            watchdogInterval = setInterval(() => {
-                if (!socket || socket.readyState !== WebSocket.OPEN) {
-                    addLog("🔄 Conexão instável. Reconectando...", "ln-yellow");
-                    conectarGateway(currentToken);
+        // FASE 3: Logs Dinâmicos
+        const logData = [
+            "Conectando ao servidor de nuvem...",
+            "Autenticando credenciais via SSL...",
+            "Montando diretórios temporários...",
+            "Iniciando subsistema de interface...",
+            "Carregando drivers de vídeo mobile...",
+            "Limpando registros de cache antigos...",
+            "Estabelecendo conexão persistente..."
+        ];
+
+        function startLogs() {
+            phase3.classList.add('active');
+            const container = document.getElementById('log-container');
+            let current = 0;
+
+            function addLog() {
+                if (current < logData.length) {
+                    const entry = document.createElement('div');
+                    entry.className = 'log-entry';
+                    entry.innerHTML = `<span class="spinner"></span>${logData[current]}`;
+                    container.appendChild(entry);
+
+                    setTimeout(() => {
+                        entry.classList.add('done');
+                        current++;
+                        addLog();
+                    }, 700);
                 } else {
-                    console.log("Watchdog: Socket OK");
+                    setTimeout(startFinalPhase, 500);
                 }
-            }, 20000); 
-        }
-
-        async function registrarSlash(token) {
-            try {
-                addLog("Sincronizando Comandos...", "ln-yellow");
-                const meResp = await CapacitorHttp.get({
-                    url: 'https://discord.com/api/v10/users/@me',
-                    headers: { 'Authorization': `Bot ${token}` }
-                });
-                
-                if (meResp.status !== 200) throw new Error("Token Inválido");
-
-                const appId = meResp.data.id;
-                const regResp = await CapacitorHttp.request({
-                    url: `https://discord.com/api/v10/applications/${appId}/commands`,
-                    method: 'PUT',
-                    headers: {
-                        'Authorization': `Bot ${token}`,
-                        'Content-Type': 'application/json'
-                    },
-                    data: [{
-                        name: "testar",
-                        description: "Comando Ndj-lib Reborn Mobile",
-                        type: 1
-                    }]
-                });
-
-                if (regResp.status <= 204) addLog("✅ Slash /testar Atualizado", "ln-green");
-            } catch (e) {
-                addLog("❌ Erro REST: " + e.message, "ln-red");
-                throw e;
             }
+            addLog();
         }
 
-        function conectarGateway(token) {
-            currentToken = token;
-            if (socket) { socket.onclose = null; socket.close(); }
-
-            socket = new WebSocket('wss://gateway.discord.gg/?v=10&encoding=json');
-
-            socket.onmessage = async (event) => {
-                const data = JSON.parse(event.data);
-                const { op, t, d } = data;
-
-                if (op === 10) { // HELLO
-                    if (heartbeatInterval) clearInterval(heartbeatInterval);
-                    heartbeatInterval = setInterval(() => {
-                        if(socket.readyState === WebSocket.OPEN)
-                            socket.send(JSON.stringify({ op: 1, d: null }));
-                    }, d.heartbeat_interval);
-
-                    socket.send(JSON.stringify({
-                        op: 2,
-                        d: {
-                            token: token,
-                            intents: 1, 
-                            properties: { os: 'android', browser: 'native', device: 'mobile' }
-                        }
-                    }));
+        // FASE 4: Finalização
+        function startFinalPhase() {
+            phase3.classList.remove('active');
+            phase4.classList.add('active');
+            document.getElementById('user-welcome').innerText = "BEM-VINDO, " + localStorage.getItem('os_user').toUpperCase();
+            
+            let p2 = 0;
+            const int2 = setInterval(() => {
+                p2 += 1;
+                document.getElementById('fill2').style.width = p2 + "%";
+                if(p2 >= 100) {
+                    clearInterval(int2);
+                    window.location.href = "os.html";
                 }
-
-                if (t === 'INTERACTION_CREATE') {
-                    addLog("📩 Slash detectado!", "ln-green");
-                    
-                    // Resposta via CapacitorHttp (Evita erro de fetch no callback)
-                    const resOptions = {
-                        url: `https://discord.com/api/v10/interactions/${d.id}/${d.token}/callback`,
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        data: {
-                            type: 4,
-                            data: { content: "🚀 **Ndj-lib Reborn:** Sistema Online e Monitorado!" }
-                        }
-                    };
-                    CapacitorHttp.post(resOptions).catch(e => console.error("Erro callback", e));
-                }
-
-                if (t === 'READY') {
-                    addLog(`✅ Bot Online: ${d.user.username}`, "ln-green");
-                    setupNotification();
-                    startWatchdog();
-                }
-            };
-
-            socket.onclose = () => {
-                console.log("Socket fechado");
-            };
-
-            socket.onerror = (e) => {
-                addLog("⚠️ Erro de Conexão", "ln-red");
-            };
-        }
-
-        async function setupNotification() {
-            try {
-                await LocalNotifications.requestPermissions();
-                await LocalNotifications.schedule({
-                    notifications: [{
-                        title: "Ndj-lib: Ativa",
-                        body: "O bot está online no seu celular.",
-                        id: 1,
-                        ongoing: true,
-                        sticky: true
-                    }]
-                });
-            } catch (e) { console.error(e); }
-        }
-
-        async function ativarBot() {
-            const token = document.getElementById('bot-token').value;
-            if(!token) return;
-
-            mainBtn.disabled = true;
-            mainBtn.innerText = "SINCRO...";
-
-            try {
-                await registrarSlash(token);
-                conectarGateway(token);
-                mainBtn.style.display = 'none';
-                stopBtn.style.display = 'block';
-            } catch (e) {
-                mainBtn.disabled = false;
-                mainBtn.innerText = "LIGAR BOT";
-            }
-        }
-
-        async function finalizarSistema() {
-            addLog("Encerrando...", "ln-yellow");
-            if(socket) socket.close();
-            if(heartbeatInterval) clearInterval(heartbeatInterval);
-            if(watchdogInterval) clearInterval(watchdogInterval);
-            await LocalNotifications.cancel({ notifications: [{ id: 1 }] }).catch(()=>{});
-
-            setTimeout(() => {
-                stopBtn.style.display = 'none';
-                mainBtn.style.display = 'block';
-                mainBtn.disabled = false;
-                mainBtn.innerText = "LIGAR BOT";
-                addLog("BOT DESLIGADO.");
-            }, 1000);
+            }, 40); // Um pouco mais lento como pedido
         }
     </script>
 </body>
