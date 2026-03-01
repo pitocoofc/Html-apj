@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body {
+            margin: 0; padding: 20px;
+            background: #111; color: #fff;
+            font-family: 'Segoe UI', sans-serif;
+            user-select: none;
+        }
+        h2 { border-bottom: 1px solid #333; padding-bottom: 10px; font-weight: 300; margin-top: 0; }
+        
+        .section { margin-bottom: 30px; }
+        .label { font-size: 11px; color: #3b82f6; text-transform: uppercase; margin-bottom: 10px; display: block; letter-spacing: 1px;}
+
+        /* Grid de Wallpapers */
+        .wp-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+        .wp-item {
+            aspect-ratio: 16/9; background-size: cover; background-position: center;
+            border-radius: 8px; border: 2px solid transparent; cursor: pointer;
+            transition: 0.2s;
+        }
+        .wp-item:active { transform: scale(0.95); border-color: #3b82f6; }
+
+        /* Info do Dispositivo & Armazenamento */
+        .info-card { background: #222; padding: 15px; border-radius: 12px; border: 1px solid #333; font-size: 14px; }
+        .info-line { display: flex; justify-content: space-between; margin-bottom: 5px; }
+        .info-value { color: #3b82f6; font-family: monospace; }
+        
+        .ram-virtual { font-size: 10px; vertical-align: super; color: #a855f7; margin-left: 2px; }
+
+        .storage-container { margin-top: 15px; }
+        .storage-bar { 
+            height: 12px; width: 100%; background: #444; border-radius: 6px; 
+            display: flex; overflow: hidden; margin-bottom: 8px;
+        }
+        .bar-os { background: #eab308; width: 18.75%; } /* 24GB */
+        .bar-apps { background: #a855f7; width: 0.8%; }   /* 1GB */
+        .bar-files { background: #3b82f6; width: 0.2%; }  /* 135MB */
+        
+        .storage-legend { display: flex; gap: 10px; font-size: 10px; color: #888; flex-wrap: wrap; }
+        .dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 4px; }
+
+        /* Estilo dos Drivers */
+        .btn-group { display: flex; gap: 10px; margin-top: 15px; }
+        .driver-btn {
+            flex: 1; padding: 12px; background: #222; border: 1px solid #444;
+            color: #fff; border-radius: 8px; cursor: pointer; font-size: 13px;
+            transition: 0.3s;
+        }
+        .driver-btn:hover { background: #333; }
+        .driver-btn.primary { background: #3b82f6; border-color: #2563eb; }
+
+        #progress-container {
+            display: none; width: 100%; height: 8px; background: #222; 
+            border-radius: 4px; margin-top: 15px; overflow: hidden;
+        }
+        #progress-bar { width: 0%; height: 100%; background: #3b82f6; transition: width 0.1s; }
+    </style>
+</head>
+<body>
+
+    <div class="section">
+        <span class="label">Sobre o Dispositivo</span>
+        <h2>Especificações</h2>
+        <div class="info-card">
+            <div class="info-line"><span>Processador:</span> <span class="info-value">SnapCobra 690</span></div>
+            <div class="info-line"><span>Memória RAM:</span> <span>8GB<span class="ram-virtual">+5</span></span></div>
+            
+            <div class="storage-container">
+                <div class="info-line"><span>Armazenamento:</span> <span>25.1GB / 128GB</span></div>
+                <div class="storage-bar">
+                    <div class="bar-os"></div>
+                    <div class="bar-apps"></div>
+                    <div class="bar-files"></div>
+                </div>
+                <div class="storage-legend">
+                    <span><i class="dot" style="background:#eab308"></i>OS (24GB)</span>
+                    <span><i class="dot" style="background:#a855f7"></i>Apps (1GB)</span>
+                    <span><i class="dot" style="background:#3b82f6"></i>Arquivos (135MB)</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="section">
+        <span class="label">Personalização</span>
+        <h2>Papel de Parede</h2>
+        <div class="wp-grid">
+            <div class="wp-item" style="background-image: url('https://www.opovo.com.br/_midias/jpg/2026/02/09/800x600/1_fase_lua_minguante_11_fevereiro_2026-39299104.jpg');" 
+                 onclick="changeWP('https://www.opovo.com.br/_midias/jpg/2026/02/09/800x600/1_fase_lua_minguante_11_fevereiro_2026-39299104.jpg')"></div>
+            
+            <div class="wp-item" style="background-image: url('https://w.wallhaven.cc/full/j3/wallhaven-j3m8p6.png');" 
+                 onclick="changeWP('https://w.wallhaven.cc/full/j3/wallhaven-j3m8p6.png')"></div>
+            
+            <div class="wp-item" style="background-image: url('https://w.wallhaven.cc/full/ox/wallhaven-oxv699.jpg');" 
+                 onclick="changeWP('https://w.wallhaven.cc/full/ox/wallhaven-oxv699.jpg')"></div>
+            
+            <div class="wp-item" style="background-image: url('https://w.wallhaven.cc/full/gp/wallhaven-gpl9ve.jpg');" 
+                 onclick="changeWP('https://w.wallhaven.cc/full/gp/wallhaven-gpl9ve.jpg')"></div>
+        </div>
+    </div>
+
+    <div class="section">
+        <span class="label">Hardware & Subsistema</span>
+        <h2>Drivers de Dispositivo</h2>
+        <div class="info-card">
+            <div class="info-line"><span>Driver de Vídeo:</span> <span id="v-status">OFF</span></div>
+            <div class="info-line"><span>Driver de Rede (Ndj):</span> <span id="n-status">OFF</span></div>
+        </div>
+        
+        <div id="progress-container"><div id="progress-bar"></div></div>
+
+        <div class="btn-group">
+            <button class="driver-btn" onclick="installDrivers('essentials')">Essenciais</button>
+            <button class="driver-btn primary" onclick="installDrivers('full')">Baixar Todos</button>
+        </div>
+    </div>
+
+    <div class="section">
+        <span class="label">Sistema</span>
+        <div class="info-card">
+            <div class="info-line"><span>Versão:</span> <span>1.0.0-beta</span></div>
+            <div class="info-line"><span>Desenvolvedor:</span> <span>Ghost</span></div>
+            <div class="info-line"><span>Repositório:</span> <span>Ndj-lib</span></div>
+        </div>
+    </div>
+
+    <script>
+        function changeWP(url) {
+            window.parent.postMessage({ type: 'SET_WALLPAPER', url: url }, '*');
+        }
+
+        function installDrivers(mode) {
+            const container = document.getElementById('progress-container');
+            const bar = document.getElementById('progress-bar');
+            container.style.display = 'block';
+            let width = 0;
+
+            const interval = setInterval(() => {
+                if (width >= 100) {
+                    clearInterval(interval);
+                    completeInstallation(mode);
+                } else {
+                    width += Math.random() * 15;
+                    if(width > 100) width = 100;
+                    bar.style.width = width + '%';
+                }
+            }, 200);
+        }
+
+        function completeInstallation(mode) {
+            if (mode === 'essentials') {
+                parent.driver_video = "on";
+                parent.driver_audio = "on";
+                parent.driver_optimization = "on";
+                parent.driver_user_erro = "on";
+                document.getElementById('v-status').innerText = "ON";
+                document.getElementById('v-status').style.color = "#4ade80";
+            } else {
+                parent.driver_video = "on";
+                parent.driver_ndj = "on";
+                parent.driver_system = "on";
+                parent.driver_camera = "on";
+                parent.driver_touch_advanced = "on";
+                parent.driver_cloud_conect = "on";
+                parent.driver_all_conect = "on";
+                parent.driver_security_internal = "on";
+                parent.driver_optimization = "on";
+                parent.driver_failed = "on"
+                document.getElementById('v-status').innerText = "ON";
+                document.getElementById('n-status').innerText = "ON";
+                document.getElementById('v-status').style.color = "#4ade80";
+                document.getElementById('n-status').style.color = "#4ade80";
+            }
+            alert("Sincronização com Kernel concluída!");
+            document.getElementById('progress-container').style.display = 'none';
+        }
+    </script>
+</body>
+</html>
