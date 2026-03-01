@@ -1,6 +1,6 @@
 {
-  "appId": "com.meu.jogo",
-  "appName": "Meu Jogo",
+  "appId": "web.os.on",
+  "appName": "WebOS",
   "webDir": "www",
   "bundledWebRuntime": false
 }
