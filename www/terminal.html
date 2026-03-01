@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body { background: #000; color: #4ade80; font-family: 'Courier New', monospace; padding: 15px; margin: 0; overflow: hidden; }
+        #output { height: calc(100vh - 50px); overflow-y: auto; white-space: pre-wrap; font-size: 14px; }
+        #input-line { display: flex; gap: 10px; }
+        input { background: transparent; border: none; color: #4ade80; outline: none; flex: 1; font-family: inherit; font-size: 14px; }
+        .prompt { color: #3b82f6; }
+        .error { color: #ef4444; }
+        .success { color: #22c55e; }
+    </style>
+</head>
+<body>
+    <div id="output">GHOST OS [Version 1.0.0-beta]
+(c) 2026 Ndj-lib Corporation. Todos os direitos reservados.
+Digite 'help' para ver os comandos.
+
+</div>
+    <div id="input-line">
+        <span class="prompt">ghost@root:~$</span>
+        <input type="text" id="cmd" autofocus spellcheck="false">
+    </div>
+
+    <script>
+        const output = document.getElementById('output');
+        const input = document.getElementById('cmd');
+
+        const commands = {
+            'help': () => "Comandos: help, clear, sys --info, ghost --bench, net --scan, kernel --read",
+            'clear': () => { output.innerHTML = ''; return ''; },
+            'sys --info': () => {
+                return `[HARDWARE REPORT]
+CPU: SnapCobra 690 v8.2
+RAM: 8GB + 5GB V-RAM (Virtualization ACTIVE)
+GPU: Ghost Render Engine 2.0
+STORAGE: 128GB (25.1GB Occupied)`;
+            },
+            'net --scan': () => {
+                return `[SCANNING NETWORK INTERFACES...]
+wlan0: PROMISCUOUS MODE
+Scanning for SSID...
+> Ndj_Fiber_5G (SECURED)
+> Ghost_Net_Hidden (OPEN)
+> Multilaser_Default (SECURED)
+Status: driver_ndj is ON. Connection stable.`;
+            },
+            'ghost --bench': () => {
+                return `[BENCHMARK STARTING]
+SnapCobra Core 1: [||||||||||] 100%
+SnapCobra Core 2: [||||||||||] 100%
+V-RAM Sync: 5.2GB/5.0GB (Overclocking...)
+RESULT: 84.921 G-Points. Sistema apto para Cloud Rendering.`;
+            },
+            'kernel --read': () => "Lendo kernel.txt do GitHub...\n" + (parent.kernel_data || "Aguardando sincronização com repositório...")
+        };
+
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                const fullCmd = input.value.trim();
+                const cmd = fullCmd.toLowerCase();
+                
+                output.innerHTML += `<span class="prompt">ghost@root:~$</span> ${fullCmd}\n`;
+                
+                if (commands[cmd]) {
+                    output.innerHTML += commands[cmd]() + "\n\n";
+                } else if (cmd !== '') {
+                    output.innerHTML += `<span class="error">Comando '${cmd}' não reconhecido pelo Kernel.</span>\n\n`;
+                }
+                
+                input.value = '';
+                output.scrollTop = output.scrollHeight;
+            }
+        });
+    </script>
+</body>
+</html>
