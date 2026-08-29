@@ -3,3 +3,62 @@ Informações do GhostOS
 Modo desenvolvedor:
   Disponibiliza a remoção da tela de senha, modificações internas, abertura para falso overclock do sistema (não oferecendo risco real)
     Pode ser ativado no aplicativo Ajustes, clicando 7 vezes na versão do sistema
+integrado entre a Atualização 6.0.0 Acarajé e a 7.0.0 Bolinha de queijo
+
+Personalização:
+Teve novas adições na Atualização 7.0.0 Bolinha de queijo (patch 4) e permite alterar fontes, plano de fundo, itens visiveis, linguagem, botões visiveis, modo de funcionamento e etc
+Plano de fundo: Pode ser personalizado na opção de personalizações ou dentro do aplicativo Ajustes
+O resto da personalização está presente SOMENTE no aplicativo "Personalizar" do sistema
+O aplicativo se encontra na tela de atalho (parte superior do sistema)
+
+Emulação: 
+A emulação foi introduzida na 7.0.0 Bolinha de queijo e foi removida 5 minutos após o lançamento
+O primeiro emulador disponivel: Linux + NodeJS
+Teve a introdução do emulador de CHIP-8 na versão Atualização 7.0.0 Bolinha de queijo (patch 5)
+O emulador NexosOS foi introduzido na Atualização 7.0.0 Bolinha de queijo (patch 6) e funciona como um segundo sistema interno
+Os emuladores podem ser acessados na area de desenvolvimento interno do sistema (Terceiro botão inferior)
+
+IA:
+A IA foi introduzida antes da versão Atualização 6.0.0 Acarajé e trouxe geração de Imagens simplificada
+Ela foi refeita na Atualização 7.0.0 Bolinha de queijo (patch 3) e trouxe novos modelos e uma reestruturação pesada de designer
+
+
+SuperGrep:
+O SuperGrep é o firewall do sistema
+Ele opera tentando traduzir ofuscações e bloqueando codigos q tentem acessar funções fechadas e rodar codigos perigosos
+Ele ainda não foi implementado e a versão 2.0 está em desenvolvimento
+Não, Não é possivel remover ele do sistema
+
+Abertura do sistema:
+O sistema começou a ser aberto na Atualização 7.0.0 Bolinha de queijo (4)
+Introduzindo novas possibilidades 
+Nada em especial
+
+Senha:
+O sistema tem um total de 4 opções de senha
+KeyPad: Solicita uma combinação de numeros ou letras 
+Knock: Inspirado no antigo modelo LG (4 quadrados e o usuario deve formar uma sequencia com eles)
+Pattern: Formar uma combinação em um quadrado 3x3
+Assinatura: Desenhe uma senha caracteristica
+Todas as senhas possuem criptografia AES-256
+So existe 3 maneiras de recuperar o sistema
+1: Ele vai solicitar a data exata que o sistema foi iniciado pela primeira vez + nome de usuario
+2: Apagando o sistema totalmente
+3: Reinstalando o GhostOS/limpando todos os dados
+Não, Não existe uma forma de recuperação total caso o usuario não lembre a minima informação
+
+Game Panel:
+A introdução dele não foi informada
+Atualmente ele está quebrado na interface mobile e ainda não existe uma data de correção
+
+WIFI:
+Cria uma sensação de profundidade do sistema
+Todas as redes são falsas e normalmente possuem senhas simples (NÃO INFORMADAS)
+A desativação (wifi) não resulta em nenhuma penalidade
+
+Mapa:
+introduzido na Atualização 5.5.0
+Ele trouxe inicialmente um mapa de noticias de codigo aberto
+Reestruturado na Atualização 6.5.0 Acarajé
+Trouxe Bing Maps de forma não oficial, mapa 3d do mundo e outras implementações mais simples
+
