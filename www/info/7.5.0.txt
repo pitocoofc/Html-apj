@@ -1,0 +1,5 @@
+Informações do GhostOS
+  
+Modo desenvolvedor:
+  Disponibiliza a remoção da tela de senha, modificações internas, abertura para falso overclock do sistema (não oferecendo risco real)
+    Pode ser ativado no aplicativo Ajustes, clicando 7 vezes na versão do sistema
